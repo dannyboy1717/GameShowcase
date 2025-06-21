@@ -36,11 +36,10 @@ async function getSupabaseTable() {
   const hash = CryptoJS.HmacSHA256(timestamp, SECRET).toString();
   const headers = new Headers();
   headers.append('x-timestamp', timestamp);
-  headers.append('Authorization', `HMAC ${hash}`);
-  //const response = await fetch("https://danhug.com/api/games");
-  const response = await fetch("http://192.168.1.80:3000/api/games", {
+  headers.append('x-api-key', `HMAC ${hash}`);
+  const response = await fetch("https://danhug.com/api/games", {
     method: "GET",
-    headers: headers
+    headers: headers,
   });
   console.log("Fetching with headers: ", headers);
   console.log(await response.json());
