@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
 import React from "react";
 import { Text, View } from "react-native";
+import { useSQLiteContext } from "expo-sqlite";
 
 export default function Games() {
-
+  const db = useSQLiteContext();
+  
   return (
     <View
       style={{
