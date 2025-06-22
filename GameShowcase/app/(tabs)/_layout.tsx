@@ -27,22 +27,6 @@ async function prepare() {
       catch (e) {
         console.log("Error setting notification handler", e);
       }
-    }
-
-async function getSupabaseTable() {
-  console.log("Attempting to get table...");
-  const SECRET = 'Persona4BestGame';
-  const timestamp = Date.now().toString();
-  const hash = CryptoJS.HmacSHA256(timestamp, SECRET).toString();
-  const headers = new Headers();
-  headers.append('x-timestamp', timestamp);
-  headers.append('x-api-key', `HMAC ${hash}`);
-  const response = await fetch("https://danhug.com/api/games", {
-    method: "GET",
-    headers: headers,
-  });
-  console.log("Fetching with headers: ", headers);
-  console.log(await response.json());
 }
 
 export default function TabLayout() {
@@ -50,7 +34,6 @@ export default function TabLayout() {
 
   useEffect(() => {
     prepare();
-    getSupabaseTable();
   }, [])
 
   return (
