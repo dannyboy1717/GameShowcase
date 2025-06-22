@@ -9,13 +9,10 @@ import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
-import * as SQLite from 'expo-sqlite';
-import * as Database from '../database/database';
-import CryptoJS from 'crypto-js';
 
 async function prepare() {
       try {
-        await Notifications.setNotificationHandler({
+        Notifications.setNotificationHandler({
           handleNotification: async () => ({
             shouldShowBanner: true,
             shouldPlaySound: true,
@@ -37,8 +34,6 @@ export default function TabLayout() {
   }, [])
 
   return (
-    <SQLite.SQLiteProvider databaseName='GameShowcase.db'
-      onInit={Database.init} >
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
@@ -68,6 +63,5 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </SQLite.SQLiteProvider>
   );
 }
