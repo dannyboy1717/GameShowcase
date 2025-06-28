@@ -14,23 +14,27 @@ export default function AddGames() {
 
     // we define an inner async function because useEffect can't be async directly
     const init = async () => {
-      const supabase = await getSupabase()
+      console.log("Initializing Supabase...");
+      const supabase = await getSupabase();
 
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
+      console.log("Getting session...");
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
 
+      console.log("Session:", session);
       const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session)
+        setSession(session);
       })
 
-      unsubscribe = listener?.subscription.unsubscribe
-      setReady(true)
+      console.log("Setting up auth listener...");
+      unsubscribe = listener?.subscription.unsubscribe;
+      setReady(true);
     }
 
-    init()
+    init();
 
     return () => {
-      if (unsubscribe) unsubscribe()
+      if (unsubscribe) unsubscribe();
     }
   }, [])
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
-import { getSupabase } from '../lib/supabase'
+import { getSupabase, getGames } from '../lib/supabase'
 import { Button, Input } from '@rneui/themed'
 
 export default function Auth() {
@@ -18,6 +18,7 @@ export default function Auth() {
 
     if (error) Alert.alert(error.message);
     setLoading(false);
+    getGames();
   }
 
   async function signUpWithEmail() {
