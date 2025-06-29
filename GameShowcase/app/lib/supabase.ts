@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createClient, processLock, SupabaseClient } from '@supabase/supabase-js'
 import { useState } from 'react';
 import CryptoJS from 'crypto-js';
+import { Game } from '../types/Game';
 
 let supabaseClient: SupabaseClient | undefined;
 let initPromise: Promise<void> | null = null;
@@ -63,7 +64,8 @@ async function getSupabaseDetails() {
   return { supabaseAnonKey: key, supabaseUrl: url };
 }
 
-export async function getGames() {
+export async function getGames(): Promise<Game[] | undefined> {
+  console.log("Fetching games from Supabase...");
   const supabase = await getSupabase();
   let { data, error } = await supabase
                                 .from('Games')
@@ -75,6 +77,7 @@ export async function getGames() {
   }
 
   if (data) {
-    console.log("Fetched games:", data);
+    console.log("Fetched games:", (data as Game[]).length);
+    return data as Game[];
   }
 }

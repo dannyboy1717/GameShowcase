@@ -1,9 +1,12 @@
 import { Stack } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { Text, View } from "react-native";
+import { getGames } from "../lib/supabase";
 
 export default function Games() {
-  
+  useEffect(() => {
+    getGames();
+  }, []);
   return (
     <View
       style={{

@@ -18,7 +18,6 @@ export default function Auth() {
 
     if (error) Alert.alert(error.message);
     setLoading(false);
-    getGames();
   }
 
   async function signUpWithEmail() {
