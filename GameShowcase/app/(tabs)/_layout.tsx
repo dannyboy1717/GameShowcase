@@ -1,4 +1,6 @@
 import { Tabs } from 'expo-router';
+import "@/global.css";
+import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 
@@ -34,7 +36,7 @@ export default function TabLayout() {
   }, [])
 
   return (
-      <Tabs
+    <GluestackUIProvider mode="light"><Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
           headerShown: false,
@@ -62,6 +64,6 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
           }}
         />
-      </Tabs>
+      </Tabs></GluestackUIProvider>
   );
 }
