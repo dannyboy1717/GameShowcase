@@ -1,16 +1,15 @@
-import { Tabs } from 'expo-router';
-import "@/global.css";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import "@/global.css";
+import { Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 
+import * as Notifications from 'expo-notifications';
 import { HapticTab } from '../components/HapticTab';
 import { IconSymbol } from '../components/ui/IconSymbol';
 import TabBarBackground from '../components/ui/TabBarBackground';
 import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
-import * as SplashScreen from 'expo-splash-screen';
-import * as Notifications from 'expo-notifications';
 
 async function prepare() {
       try {
@@ -30,18 +29,18 @@ async function prepare() {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-
+  console.log("TabLayout colorScheme", colorScheme);
   useEffect(() => {
     prepare();
   }, [])
 
   return (
-    <GluestackUIProvider mode="light"><Tabs
+    <GluestackUIProvider mode={colorScheme ?? "dark"}><Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          tabBarActiveTintColor: Colors[colorScheme ?? 'dark'].tint,
           headerShown: false,
           tabBarButton: HapticTab,
-          tabBarBackground: TabBarBackground,
+          tabBarBackground: () => <TabBarBackground colorScheme={colorScheme ?? "dark"}/>,
           tabBarStyle: Platform.select({
             ios: {
               // Use a transparent background on iOS to show the blur effect

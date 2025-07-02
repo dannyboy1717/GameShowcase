@@ -1,9 +1,9 @@
-import 'react-native-url-polyfill/auto'
-import { useState, useEffect } from 'react'
-import { getSupabase } from '../lib/supabase'
-import Auth from '../components/Auth'
-import { View, Text } from 'react-native'
 import { Session } from '@supabase/supabase-js'
+import { useEffect, useState } from 'react'
+import { Text, View } from 'react-native'
+import 'react-native-url-polyfill/auto'
+import Auth from '../components/Auth'
+import { getSupabase } from '../lib/supabase'
 
 export default function AddGames() {
   const [session, setSession] = useState<Session | null>(null)
@@ -43,7 +43,7 @@ export default function AddGames() {
   }
 
   return (
-    <View>
+    <View className="bg-white dark:bg-black min-h-screen">
       <Auth />
       {session && session.user && <Text>{session.user.id}</Text>}
     </View>
