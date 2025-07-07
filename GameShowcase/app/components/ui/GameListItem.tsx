@@ -11,7 +11,7 @@ export default function GameListItem(props: GameListItemProps) {
   const navigation = useNavigation<any>();
 
   function goToDetails(game: Game): void {
-    navigation.navigate("gameDetails", { game });
+    navigation.navigate("components/screens/game-details", { game });
   }
 
   return (
