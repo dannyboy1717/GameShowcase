@@ -38,7 +38,12 @@ export default function Games() {
   const [games, setGames] = useState<Game[] | LoadState>(LoadState.LOADING);
   useEffect(() => {
     const fetchGames = async () => {
-      setGames((await getGames()) ?? LoadState.ERROR);
+      const result = await getGames();
+      if (result.error || !result.data) {
+        setGames(LoadState.ERROR);
+      } else {
+        setGames(result.data);
+      }
     };
     fetchGames();
   }, []);

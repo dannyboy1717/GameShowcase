@@ -1,9 +1,8 @@
-import { AppState } from 'react-native'
-import 'react-native-url-polyfill/auto'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { createClient, processLock, SupabaseClient } from '@supabase/supabase-js'
-import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient, processLock, SupabaseClient } from '@supabase/supabase-js';
 import CryptoJS from 'crypto-js';
+import { AppState } from 'react-native';
+import 'react-native-url-polyfill/auto';
 import { Game } from '../types/Game';
 
 let supabaseClient: SupabaseClient | undefined;
@@ -44,7 +43,6 @@ export async function initSupabase() {
 }
 
 async function getSupabaseDetails() {
-  // TODO: Replace with env variable
   const SECRET = "Persona4BestGame";
   const timestamp = Date.now().toString();
   const hash = CryptoJS.HmacSHA256(timestamp, SECRET).toString();
@@ -64,20 +62,39 @@ async function getSupabaseDetails() {
   return { supabaseAnonKey: key, supabaseUrl: url };
 }
 
-export async function getGames(): Promise<Game[] | undefined> {
+type FetchResult<T> =
+  | { data: T; error: null }
+  | { data: null; error: Error };
+
+export async function getGames(): Promise<FetchResult<Game[]>> {
   console.log("Fetching games from Supabase...");
-  const supabase = await getSupabase();
-  let { data, error } = await supabase
-                                .from('Games')
-                                .select('*')
-                                .order('id');
-  if (error) {
-    console.error("Error fetching games:", error);
-    throw error;
+  let supabaseInstance;
+  try {
+    supabaseInstance = await getSupabase();
+  } catch (initError) {
+    console.error("Error initializing Supabase client:", initError);
+    return { data: null, error: new Error("Failed to initialize Supabase client.") };
   }
 
-  if (data) {
-    console.log("Fetched games:", (data as Game[]).length);
-    return data as Game[];
+
+  try {
+    const { data, error } = await supabaseInstance
+      .from("Games")
+      .select("*")
+      .order("id");
+
+    if (error) {
+      console.error("Error fetching games:", error);
+      // Return with error and null data
+      return { data: null, error: error };
+    }
+
+    const gamesData: Game[] = (data as Game[]) || [];
+    console.log("Fetched games:", gamesData.length);
+    return { data: gamesData, error: null };
+
+  } catch (e: any) {
+    console.error("Unexpected error during games fetch:", e);
+    return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }
 }
