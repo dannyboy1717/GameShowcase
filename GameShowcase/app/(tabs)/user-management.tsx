@@ -5,14 +5,13 @@ import 'react-native-url-polyfill/auto'
 import Auth from '../components/Auth'
 import { getSupabase } from '../lib/supabase'
 
-export default function AddGames() {
+export default function UserManagement() {
   const [session, setSession] = useState<Session | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     let unsubscribe: () => void
 
-    // we define an inner async function because useEffect can't be async directly
     const init = async () => {
       console.log("Initializing Supabase...");
       const supabase = await getSupabase();
@@ -44,8 +43,8 @@ export default function AddGames() {
 
   return (
     <View className="bg-white dark:bg-black min-h-screen">
-      <Auth />
-      {session && session.user && <Text>{session.user.id}</Text>}
+      {!session && <Auth />}
+      {session && session.user && <Text className="text-black dark:text-white">{session.user.id}</Text>}
     </View>
   )
 }

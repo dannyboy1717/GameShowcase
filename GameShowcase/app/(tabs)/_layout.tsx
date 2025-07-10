@@ -5,8 +5,8 @@ import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import * as Notifications from 'expo-notifications';
+import { LucideGamepad2, User } from 'lucide-react-native';
 import { HapticTab } from '../components/HapticTab';
-import { IconSymbol } from '../components/ui/IconSymbol';
 import TabBarBackground from '../components/ui/TabBarBackground';
 import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
@@ -35,34 +35,41 @@ export default function TabLayout() {
   }, [])
 
   return (
-    <GluestackUIProvider mode={colorScheme ?? "dark"}><Tabs
+    <GluestackUIProvider mode={colorScheme ?? "dark"}>
+      <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'dark'].tint,
+          tabBarActiveTintColor: Colors[colorScheme ?? "dark"].tint,
           headerShown: false,
           tabBarButton: HapticTab,
-          tabBarBackground: () => <TabBarBackground colorScheme={colorScheme ?? "dark"}/>,
+          tabBarBackground: () => (
+            <TabBarBackground colorScheme={colorScheme ?? "dark"} />
+          ),
           tabBarStyle: Platform.select({
             ios: {
               // Use a transparent background on iOS to show the blur effect
-              position: 'absolute',
+              position: "absolute",
             },
             default: {},
           }),
-        }}>
+        }}
+      >
         <Tabs.Screen
           name="games"
           options={{
-            title: 'View',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+            title: "Games",
+            tabBarIcon: ({ color }) => (
+              <LucideGamepad2 color={color} />
+            ),
           }}
         />
         <Tabs.Screen
-          name="add-games"
+          name="user-management"
           options={{
-            title: 'Add',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+            title: "User",
+            tabBarIcon: ({ color }) => <User color={color} />,
           }}
         />
-      </Tabs></GluestackUIProvider>
+      </Tabs>
+    </GluestackUIProvider>
   );
 }
