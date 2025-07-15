@@ -15,13 +15,11 @@ export default function GameListItem(props: GameListItemProps) {
   }
 
   return (
-    <Pressable onPress={() => goToDetails(props.game)}>
-      <Text className="text-lg font-semibold">
-        {props.game.Name}
-      </Text>
-      <Text className="text-md">
-        {props.game["Developer/Publisher"]}
-      </Text>
+    <Pressable onPress={() => goToDetails(props.game)} className="min-h-12 justify-center">
+      <Text className="text-lg font-semibold">{props.game.Name}</Text>
+      {props.game["Developer/Publisher"] && (
+        <Text className="text-md">{props.game["Developer/Publisher"]}</Text>
+      )}
     </Pressable>
-  )
+  );
 }

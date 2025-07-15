@@ -1,9 +1,10 @@
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Divider } from "@rneui/themed";
 import React, { useEffect, useState } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import GameListItem from "../components/ui/GameListItem";
 import { getGames } from "../lib/supabase";
@@ -25,9 +26,12 @@ function renderGames(games: Game[] | LoadState) {
           {gameArray?.map((game) => (
             <React.Fragment key={game.id}>
               <GameListItem game={game} />
-              <Divider key={`divider-${game.id}`} className="my-2" />
+              {game.id !== gameArray[gameArray.length - 1].id && (
+                <Divider key={`divider-${game.id}`} className="my-2" />
+              )}
             </React.Fragment>
           ))}
+          <View />
         </>
       );
     }
@@ -48,12 +52,13 @@ export default function Games() {
     fetchGames();
   }, []);
 
+  const tabHeight = useBottomTabBarHeight();
   // TODO: persist games list
   return (
     <SafeAreaProvider>
-      <SafeAreaView className="bg-white dark:bg-black min-h-screen">
-        <ScrollView className="flex-grow py-16 px-4">
-          <VStack space="md" className="min-w-screen">
+      <SafeAreaView className={`bg-white dark:bg-black`}>
+        <ScrollView className={`flex-grow px-4 pb-${tabHeight + 16}`}>
+          <VStack space="md" className={`min-w-screen`}>
             {renderGames(games)}
           </VStack>
         </ScrollView>
