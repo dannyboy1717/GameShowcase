@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Alert, StyleSheet, View } from 'react-native'
-import { getSupabase, getGames } from '../lib/supabase'
+import { getSupabase, getGamesAsync } from '../lib/supabase'
 import { Button, Input } from '@rneui/themed'
 
 export default function Auth() {

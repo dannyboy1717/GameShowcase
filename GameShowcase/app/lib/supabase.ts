@@ -4,26 +4,41 @@ import CryptoJS from 'crypto-js';
 import { AppState } from 'react-native';
 import 'react-native-url-polyfill/auto';
 import { Game } from '../types/Game';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
-let supabaseClient: SupabaseClient | undefined;
-let initPromise: Promise<void> | null = null;
+let supabaseClient: SupabaseClient
 
-export async function getSupabase(): Promise<SupabaseClient> {
-  if (supabaseClient) { console.log("got client"); return supabaseClient; }
-  if (!initPromise) initPromise = initSupabase();
-  await initPromise;
-  return supabaseClient!;
-}
+// This function will be called ONCE when the app starts.
+export async function initializeSupabase(): Promise<SupabaseClient> {
+  if (supabaseClient) return supabaseClient
 
-export async function initSupabase() {
-  const { supabaseAnonKey, supabaseUrl } = await getSupabaseDetails();
-  if (!supabaseAnonKey || !supabaseUrl) {
-    console.log("Supabase details are not available");
-    throw new Error("Supabase details are not available");
+  const SECRET = 'Persona4BestGame'
+  const timestamp = Date.now().toString()
+  const hash = CryptoJS.HmacSHA256(timestamp, SECRET).toString()
+  const headers = new Headers()
+  headers.append('x-timestamp', timestamp)
+  headers.append('x-api-key', `HMAC ${hash}`)
+
+  console.log('Fetching Supabase credentials from API...')
+  const response = await fetch('https://danhug.com/api/games', {
+    method: 'GET',
+    headers: headers,
+  });
+  console.log("Got those credentials!!");
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch Supabase credentials from API.')
   }
-  
-  console.log("Initializing Supabase with URL:", supabaseUrl, "and Anon Key:", supabaseAnonKey);
-  supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+
+  const json = await response.json()
+  const { key, url } = json
+
+  if (!key || !url) {
+    throw new Error('Invalid Supabase credentials received from API.')
+  }
+
+  supabaseClient = createClient(url, key, {
     auth: {
       storage: AsyncStorage,
       autoRefreshToken: true,
@@ -31,42 +46,33 @@ export async function initSupabase() {
       detectSessionInUrl: false,
       lock: processLock,
     },
-  });
+  })
 
-  AppState.addEventListener('change', (state) => {
+  AppState.addEventListener('change', state => {
     if (state === 'active') {
-      supabaseClient!.auth.startAutoRefresh();
+      supabaseClient.auth.startAutoRefresh()
     } else {
-      supabaseClient!.auth.stopAutoRefresh();
+      supabaseClient.auth.stopAutoRefresh()
     }
-  });
+  })
+
+  return supabaseClient
 }
 
-async function getSupabaseDetails() {
-  const SECRET = "Persona4BestGame";
-  const timestamp = Date.now().toString();
-  const hash = CryptoJS.HmacSHA256(timestamp, SECRET).toString();
-  const headers = new Headers();
-  headers.append('x-timestamp', timestamp);
-  headers.append('x-api-key', `HMAC ${hash}`);
-  const response = await fetch("https://danhug.com/api/games", {
-    method: "GET",
-    headers: headers,
-  });
-  const json = await response.json();
-  const { key, url } = json;
-  
-  if (!key || !url) {
-    throw new Error("Could not get supabase info from danhug.com");
+// This is the function your hooks and components will use.
+// It's synchronous and assumes initialization is already done.
+export function getSupabase(): SupabaseClient {
+  if (!supabaseClient) {
+    throw new Error('Supabase client has not been initialized yet.')
   }
-  return { supabaseAnonKey: key, supabaseUrl: url };
+  return supabaseClient
 }
 
 type FetchResult<T> =
   | { data: T; error: null }
   | { data: null; error: Error };
 
-export async function getGames(): Promise<FetchResult<Game[]>> {
+export async function getGamesAsync(): Promise<FetchResult<Game[]>> {
   console.log("Fetching games from Supabase...");
   let supabaseInstance;
   try {
@@ -75,7 +81,6 @@ export async function getGames(): Promise<FetchResult<Game[]>> {
     console.error("Error initializing Supabase client:", initError);
     return { data: null, error: new Error("Failed to initialize Supabase client.") };
   }
-
 
   try {
     const { data, error } = await supabaseInstance
@@ -97,4 +102,46 @@ export async function getGames(): Promise<FetchResult<Game[]>> {
     console.error("Unexpected error during games fetch:", e);
     return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }
+}
+
+async function fetchGames(): Promise<Game[]> {
+  const supabase = getSupabase() // Synchronous call
+  const { data, error } = await supabase
+    .from('Games') // Note: Supabase table names are case-sensitive
+    .select('*')
+
+  if (error) throw error
+  console.log("Fetched games from Supabase:", data?.length);
+  return data || []
+}
+
+export function useGames() {
+  const client = useQueryClient()
+
+  const query = useQuery<Game[], Error>({
+    queryKey: ['games'], // Use lowercase for query keys by convention
+    queryFn: fetchGames,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+  useEffect(() => {
+    const supabase = getSupabase() // Synchronous call
+
+    const channel = supabase
+      .channel('public-games-channel') // Give the channel a unique name
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'Games' },
+        () => {
+          client.invalidateQueries({ queryKey: ['games'] })
+        }
+      )
+      .subscribe()
+
+    // The cleanup function is now also fully synchronous.
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [client])
+  return query;
 }
