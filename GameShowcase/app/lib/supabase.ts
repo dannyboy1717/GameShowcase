@@ -90,7 +90,6 @@ export async function getGamesAsync(): Promise<FetchResult<Game[]>> {
 
     if (error) {
       console.error("Error fetching games:", error);
-      // Return with error and null data
       return { data: null, error: error };
     }
 
@@ -105,9 +104,9 @@ export async function getGamesAsync(): Promise<FetchResult<Game[]>> {
 }
 
 async function fetchGames(): Promise<Game[]> {
-  const supabase = getSupabase() // Synchronous call
+  const supabase = getSupabase()
   const { data, error } = await supabase
-    .from('Games') // Note: Supabase table names are case-sensitive
+    .from('Games')
     .select('*')
 
   if (error) throw error
@@ -119,16 +118,16 @@ export function useGames() {
   const client = useQueryClient()
 
   const query = useQuery<Game[], Error>({
-    queryKey: ['games'], // Use lowercase for query keys by convention
+    queryKey: ['games'],
     queryFn: fetchGames,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   })
 
   useEffect(() => {
-    const supabase = getSupabase() // Synchronous call
+    const supabase = getSupabase()
 
     const channel = supabase
-      .channel('public-games-channel') // Give the channel a unique name
+      .channel('public-games-channel')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'Games' },
@@ -138,10 +137,43 @@ export function useGames() {
       )
       .subscribe()
 
-    // The cleanup function is now also fully synchronous.
     return () => {
       supabase.removeChannel(channel)
     }
   }, [client])
   return query;
+}
+
+export function useGameById(id: number) {
+  const queryClient = useQueryClient();
+
+  return useQuery<Game | null, Error>({
+    queryKey: ['game', id],
+    
+    queryFn: async () => {
+      const gamesList = queryClient.getQueryData<Game[]>(['games']);
+      if (gamesList) {
+        const foundGame = gamesList.find(game => game.id === id);
+        if (foundGame) {
+          console.log(`Game with ID ${id} found in existing list cache.`);
+          return foundGame;
+        }
+      }
+
+      console.log(`Fetching game with ID ${id} directly from Supabase.`);
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('Games')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data || null;
+    },
+    staleTime: 1000 * 60 * 10,
+  });
 }

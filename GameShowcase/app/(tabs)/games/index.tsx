@@ -1,5 +1,4 @@
 import React from 'react';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Game } from '../../types/Game'; // Adjust path if needed
@@ -28,7 +27,6 @@ function renderGames(games: Game[]) {
 
 export default function Games() {
   const { data, error, isLoading } = useGames();
-  const tabHeight = useBottomTabBarHeight();
 
   if (isLoading) {
     return (
@@ -49,12 +47,7 @@ export default function Games() {
   return (
     <SafeAreaProvider>
       <SafeAreaView className="flex-1 bg-white dark:bg-black">
-        <ScrollView
-          contentContainerStyle={{
-            paddingBottom: tabHeight + 16,
-            paddingHorizontal: 16,
-          }}
-        >
+        <ScrollView className='px-4'>
           <VStack space="md">{renderGames(data || [])}</VStack>
         </ScrollView>
       </SafeAreaView>

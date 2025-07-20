@@ -1,9 +1,9 @@
 import { Spinner } from "@/components/ui/spinner";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { getSupabase } from "../lib/supabase";
+import { getSupabase, useGameById } from "../lib/supabase";
 import { Game } from "../types/Game";
 
 export enum LoadState {
@@ -13,62 +13,51 @@ export enum LoadState {
 }
 
 export default function GameDetailScreen() {
-  const [game, setGame] = useState<Game | LoadState>(LoadState.LOADING);
   const { id } = useLocalSearchParams();
+  const gameId = typeof id === 'string' ? parseInt(id, 10) : undefined;
+  const { data: game, isLoading, error } = useGameById(gameId!);
 
-  useEffect(() => {
-    getGameDetails(id as string);
-  }, [id])
-
-  async function getGameDetails(id: string) {
-    const supabase = await getSupabase();
-    const { data, error } = await supabase
-      .from("Games")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error) {
-      console.error("Error fetching game details:", error);
-      setGame(LoadState.ERROR);
-    }
-    if (!data || data === null) {
-      console.warn("No game found with id:", id);
-      setGame(LoadState.ERROR);
-    }
-    console.log("Setting game");
-    setGame(data);
+  if (!gameId) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text>Invalid Game ID</Text>
+      </View>
+    );
   }
 
-  function renderGame() {
-    switch (game) {
-      case LoadState.LOADING:
-        return <Spinner size="large" />;
-      case LoadState.ERROR:
-        return (
-          <Text className="text-red-500 text-center">
-            Error loading game details.
-          </Text>
-        );
-      default: {
-        const newGame = game as Game;
-        return (
-          <>
-            <Text className="text-2xl font-bold text-center mt-4 text-black dark:text-white">
-              {newGame.Name}
-            </Text>
-            <Text className="text-lg text-center mt-2 text-gray-700 dark:text-gray-300">
-              {newGame["Developer/Publisher"]}
-            </Text>
-          </>
-        );
-      }
-    }
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text>Error loading game: {error.message}</Text>
+      </View>
+    );
+  }
+
+  if (!game) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text>Game not found.</Text>
+      </View>
+    );
   }
 
   return (
     <SafeAreaProvider>
       <SafeAreaView className="bg-white dark:bg-black min-h-screen">
-        {renderGame()}
+          <Text className="text-2xl font-bold text-center mt-4 text-black dark:text-white">
+            {game.Name}
+          </Text>
+          <Text className="text-lg text-center mt-2 text-gray-700 dark:text-gray-300">
+            {game["Developer/Publisher"]}
+          </Text>
       </SafeAreaView>
     </SafeAreaProvider>
   );

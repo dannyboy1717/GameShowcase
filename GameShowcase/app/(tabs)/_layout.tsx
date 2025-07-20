@@ -1,7 +1,7 @@
-import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import "@/global.css";
+// app/(tabs)/_layout.tsx
+// Remove Stack import and animation related imports if they were here
 import { Tabs } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform, View, Text, ActivityIndicator } from "react-native";
 
 import * as Notifications from "expo-notifications";
@@ -11,11 +11,10 @@ import TabBarBackground from "../components/ui/TabBarBackground";
 import { Colors } from "../constants/Colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client";
+// NO QueryClient, PersistQueryClientProvider, AsyncStorage imports here
 import { initializeSupabase } from "../lib/supabase";
+import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+
 
 async function prepare() {
   try {
@@ -32,90 +31,75 @@ async function prepare() {
   }
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours
-    },
-  },
-});
+// REMOVE QueryClient and persister setup from here
+// const queryClient = new QueryClient({ ... });
+// const asyncStoragePersister = createAsyncStoragePersister({ ... });
+// persistQueryClient({ ... });
 
-const asyncStoragePersister = createAsyncStoragePersister({
-  storage: AsyncStorage,
-});
-
-persistQueryClient({
-  queryClient,
-  persister: asyncStoragePersister,
-});
 
 export default function TabLayout() {
-  const [supabaseInitialized, setSupabaseInitialized] = React.useState(false);
-  const [error, setError] = React.useState<Error | null>(null);
+  const [supabaseInitialized, setSupabaseInitialized] = useState(false); // Use useState from React
+  const [error, setError] = useState<string | null>(null); // Error message is string
   const colorScheme = useColorScheme();
-  console.log("TabLayout colorScheme", colorScheme);
+  
   useEffect(() => {
-    prepare();
-  }, []);
-
-  useEffect(() => {
+    prepare(); // Call notification setup
+    
+    // Initialize Supabase after notification setup
     initializeSupabase()
       .then(() => setSupabaseInitialized(true))
       .catch(err => setError(err.message || 'An unknown error occurred.'))
-  }, [])
+  }, []) // Empty dependency array means this runs once on mount
 
+  // Conditional rendering based on Supabase initialization state
   if (error) {
     return (
-      <View>
-        <Text>Error initializing app: {error.message}</Text>
+      <View className="flex-1 items-center justify-center">
+        <Text>Error initializing app: {error}</Text>
       </View>
-    )
+    );
   }
 
   if (!supabaseInitialized) {
     return (
-      <View className="background-white dark:bg-black flex-1 items-center justify-center">
-        <ActivityIndicator />
+      <View className="bg-white dark:bg-black flex-1 items-center justify-center">
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <GluestackUIProvider mode={colorScheme ?? "dark"}>
-        <Tabs
-          screenOptions={{
-            tabBarActiveTintColor: Colors[colorScheme ?? "dark"].tint,
-            headerShown: false,
-            tabBarButton: HapticTab,
-            tabBarBackground: () => (
-              <TabBarBackground colorScheme={colorScheme ?? "dark"} />
-            ),
-            tabBarStyle: Platform.select({
-              ios: {
-                // Use a transparent background on iOS to show the blur effect
-                position: "absolute",
-              },
-              default: {},
-            }),
+    // GluestackUIProvider should still wrap the Tabs for styling context
+    <GluestackUIProvider mode={colorScheme ?? "dark"}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors[colorScheme ?? "dark"].tint,
+          headerShown: false,
+          tabBarButton: HapticTab,
+          tabBarBackground: () => (
+            <TabBarBackground colorScheme={colorScheme ?? "dark"} />
+          ),
+          tabBarStyle: Platform.select({
+            ios: { position: "absolute" },
+            default: {},
+          }),
+        }}
+      >
+        <Tabs.Screen
+          name="games" // This links to app/(tabs)/games/index.tsx (or its _layout if it's a stack)
+          options={{
+            title: "Games",
+            tabBarIcon: ({ color }) => <LucideGamepad2 color={color} />,
           }}
-        >
-          <Tabs.Screen
-            name="games"
-            options={{
-              title: "Games",
-              tabBarIcon: ({ color }) => <LucideGamepad2 color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="user-management"
-            options={{
-              title: "User",
-              tabBarIcon: ({ color }) => <User color={color} />,
-            }}
-          />
-        </Tabs>
-      </GluestackUIProvider>
-    </QueryClientProvider>
+        />
+        <Tabs.Screen
+          name="user-management"
+          options={{
+            title: "User",
+            tabBarIcon: ({ color }) => <User color={color} />,
+          }}
+        />
+      </Tabs>
+    </GluestackUIProvider>
   );
 }
