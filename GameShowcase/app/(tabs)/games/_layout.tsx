@@ -13,10 +13,6 @@ export default function GamesTabStackLayout() {
         name="index"
         options={{ title: 'Games List' }}
       />
-      <Stack.Screen
-        name="game-details"
-        options={{ title: 'Game Details' }}
-      />
     </Stack>
   );
 }

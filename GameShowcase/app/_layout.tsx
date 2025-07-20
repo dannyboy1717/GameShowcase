@@ -27,24 +27,14 @@ const asyncStoragePersister = createAsyncStoragePersister({
 });
 
 export default function RootAppLayout() {
-  // Use a state for color scheme if needed globally here
-  const colorScheme = 'dark'; // Or use your useColorScheme hook if defined globally
+  const colorScheme = 'dark';
 
   return (
-    // --- KEY CHANGE: PersistQueryClientProvider is at the very top ---
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{ persister: asyncStoragePersister }}
-      onSuccess={() => {
-        console.log("React Query cache successfully restored.");
-      }}
-      // You can add onBeforeRestore if you need a loading state specific to cache restoration
     >
-      <GluestackUIProvider mode={colorScheme ?? "dark"}>
-        {/*
-          This Stack Navigator is the global one.
-          It will contain your (tabs) group and any standalone screens like GameDetailScreen.
-        */}
+      <GluestackUIProvider mode={colorScheme ?? "light"}>
         <Stack
           screenOptions={{
             headerShown: false,

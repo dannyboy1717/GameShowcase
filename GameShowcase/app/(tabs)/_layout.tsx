@@ -31,27 +31,19 @@ async function prepare() {
   }
 }
 
-// REMOVE QueryClient and persister setup from here
-// const queryClient = new QueryClient({ ... });
-// const asyncStoragePersister = createAsyncStoragePersister({ ... });
-// persistQueryClient({ ... });
-
-
 export default function TabLayout() {
-  const [supabaseInitialized, setSupabaseInitialized] = useState(false); // Use useState from React
-  const [error, setError] = useState<string | null>(null); // Error message is string
+  const [supabaseInitialized, setSupabaseInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   
   useEffect(() => {
-    prepare(); // Call notification setup
+    prepare();
     
-    // Initialize Supabase after notification setup
     initializeSupabase()
       .then(() => setSupabaseInitialized(true))
       .catch(err => setError(err.message || 'An unknown error occurred.'))
-  }, []) // Empty dependency array means this runs once on mount
-
-  // Conditional rendering based on Supabase initialization state
+  }, [])
+  
   if (error) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -69,7 +61,6 @@ export default function TabLayout() {
   }
 
   return (
-    // GluestackUIProvider should still wrap the Tabs for styling context
     <GluestackUIProvider mode={colorScheme ?? "dark"}>
       <Tabs
         screenOptions={{
@@ -86,7 +77,7 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen
-          name="games" // This links to app/(tabs)/games/index.tsx (or its _layout if it's a stack)
+          name="games"
           options={{
             title: "Games",
             tabBarIcon: ({ color }) => <LucideGamepad2 color={color} />,
