@@ -27,14 +27,16 @@ const asyncStoragePersister = createAsyncStoragePersister({
 });
 
 export default function RootAppLayout() {
-  const colorScheme = 'dark';
+  const colorScheme = "dark";
 
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{ persister: asyncStoragePersister }}
     >
-      <GluestackUIProvider mode={colorScheme ?? "light"}>
+      <GluestackUIProvider mode={colorScheme ?? "dark"} style={
+        { backgroundColor: colorScheme === "dark" ? "#000" : "#fff" }
+      }>
         <Stack
           screenOptions={{
             headerShown: false,

@@ -2,7 +2,7 @@
 // Remove Stack import and animation related imports if they were here
 import { Tabs } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Platform, View, Text, ActivityIndicator } from "react-native";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 
 import * as Notifications from "expo-notifications";
 import { LucideGamepad2, User } from "lucide-react-native";
@@ -12,8 +12,8 @@ import { Colors } from "../constants/Colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 
 // NO QueryClient, PersistQueryClientProvider, AsyncStorage imports here
-import { initializeSupabase } from "../lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { initializeSupabase } from "../lib/supabase";
 
 
 async function prepare() {
@@ -61,7 +61,10 @@ export default function TabLayout() {
   }
 
   return (
-    <GluestackUIProvider mode={colorScheme ?? "dark"}>
+    <GluestackUIProvider
+      mode={colorScheme ?? "dark"}
+      style={{ backgroundColor: colorScheme === "dark" ? "#000" : "#fff" }}
+    >
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? "dark"].tint,
