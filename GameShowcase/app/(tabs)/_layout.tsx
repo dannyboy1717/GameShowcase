@@ -74,6 +74,9 @@ export default function TabLayout() {
             ios: { position: "absolute" },
             default: {},
           }),
+          sceneStyle: {
+            backgroundColor: Colors[colorScheme ?? "dark"].background,
+          }
         }}
       >
         <Tabs.Screen
@@ -81,6 +84,7 @@ export default function TabLayout() {
           options={{
             title: "Games",
             tabBarIcon: ({ color }) => <LucideGamepad2 color={color} />,
+            sceneStyle: { backgroundColor: Colors[colorScheme ?? "dark"].background,}
           }}
         />
         <Tabs.Screen

@@ -34,16 +34,21 @@ export default function RootAppLayout() {
       client={queryClient}
       persistOptions={{ persister: asyncStoragePersister }}
     >
-      <GluestackUIProvider mode={colorScheme ?? "light"}>
+      <GluestackUIProvider mode={colorScheme ?? "dark"}>
         <Stack
           screenOptions={{
             headerShown: false,
             animation: 'slide_from_right',
             gestureEnabled: true,
-            animationDuration: 100
+            animationDuration: 100,
+            contentStyle: {
+              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
+            },
           }}
         >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, contentStyle: {
+              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
+          } }} />
           <Stack.Screen
             name="screens/GameDetailScreen"
             options={{
