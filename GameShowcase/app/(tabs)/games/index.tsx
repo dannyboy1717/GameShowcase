@@ -1,15 +1,16 @@
+import { VStack } from '@/components/ui/vstack';
+import { Divider } from '@rneui/base';
 import React from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Game } from '../../types/Game'; // Adjust path if needed
-import { useGames } from '../../lib/supabase';
-import { VStack } from '@/components/ui/vstack';
 import GameListItem from '../../components/ui/GameListItem';
-import { Divider } from '@rneui/base';
+import { useGames } from '../../lib/supabase';
+import { Game } from '../../types/Game'; // Adjust path if needed
 
 
 function renderGames(games: Game[]) {
   const gameArray = games as Game[];
+
   return (
     <>
       {gameArray?.map((game) => (

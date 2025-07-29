@@ -1,10 +1,8 @@
-import { Spinner } from "@/components/ui/spinner";
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, BackHandler, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { getSupabase, useGameById } from "../lib/supabase";
-import { Game } from "../types/Game";
+import { useGameById } from "../lib/supabase";
 
 export enum LoadState {
   LOADING,
@@ -16,6 +14,22 @@ export default function GameDetailScreen() {
   const { id } = useLocalSearchParams();
   const gameId = typeof id === 'string' ? parseInt(id, 10) : undefined;
   const { data: game, isLoading, error } = useGameById(gameId!);
+  const router = useRouter();
+
+  useEffect(() => {
+    function backAction() {
+      router.back();
+      return true;
+    }
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
+  
 
   if (!gameId) {
     return (
@@ -51,7 +65,7 @@ export default function GameDetailScreen() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView className="bg-white dark:bg-black min-h-screen">
+      <SafeAreaView className="bg-black min-h-screen">
           <Text className="text-2xl font-bold text-center mt-4 text-black dark:text-white">
             {game.Name}
           </Text>

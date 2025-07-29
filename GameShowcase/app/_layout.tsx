@@ -27,7 +27,7 @@ const asyncStoragePersister = createAsyncStoragePersister({
 });
 
 export default function RootAppLayout() {
-  const colorScheme = 'dark';
+  const colorScheme = "dark";
 
   return (
     <PersistQueryClientProvider
