@@ -108,7 +108,7 @@ export default function GameDetailsScreen() {
     return (
       <View className="flex-row items-center">
         <View className="flex-row">{stars}</View>
-        <Text className="ml-2 text-gray-600 dark:text-gray-400 font-medium">{rating.toFixed(1)}/5</Text>
+        <Text className="ml-2 text-gray-600 dark:text-gray-400 font-medium">{(rating / 2)}/5</Text>
       </View>
     )
   }
