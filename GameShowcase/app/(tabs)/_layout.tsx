@@ -1,103 +1,49 @@
-// app/(tabs)/_layout.tsx
-// Remove Stack import and animation related imports if they were here
-import { Tabs } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Text, View } from "react-native";
-
-import * as Notifications from "expo-notifications";
-import { LucideGamepad2, User } from "lucide-react-native";
-import { HapticTab } from "../components/HapticTab";
-import TabBarBackground from "../components/ui/TabBarBackground";
-import { Colors } from "../constants/Colors";
-import { useColorScheme } from "../hooks/useColorScheme";
-
-// NO QueryClient, PersistQueryClientProvider, AsyncStorage imports here
-import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { initializeSupabase } from "../lib/supabase";
-
-
-async function prepare() {
-  try {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowList: true,
-      }),
-    });
-  } catch (e) {
-    console.log("Error setting notification handler", e);
-  }
-}
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { Platform } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { HapticTab } from '@/components/HapticTab';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import TabBarBackground from '@/components/ui/TabBarBackground';
+import "@/global.css"
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-  const [supabaseInitialized, setSupabaseInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const colorScheme = useColorScheme();
-  
-  useEffect(() => {
-    prepare();
-    
-    initializeSupabase()
-      .then(() => setSupabaseInitialized(true))
-      .catch(err => setError(err.message || 'An unknown error occurred.'))
-  }, [])
-  
-  if (error) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Error initializing app: {error}</Text>
-      </View>
-    );
-  }
-
-  if (!supabaseInitialized) {
-    return (
-      <View className="bg-white dark:bg-black flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
 
   return (
-    <GluestackUIProvider
-      mode={colorScheme ?? "dark"}
-      style={{ backgroundColor: colorScheme === "dark" ? "#000" : "#fff" }}
-    >
+    <SafeAreaProvider>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? "dark"].tint,
+          tabBarActiveTintColor: Colors[colorScheme ?? 'dark'].tint,
           headerShown: false,
           tabBarButton: HapticTab,
-          tabBarBackground: () => (
-            <TabBarBackground colorScheme={colorScheme ?? "dark"} />
-          ),
+          tabBarBackground: TabBarBackground,
           tabBarStyle: Platform.select({
-            ios: { position: "absolute" },
+            ios: {
+              // Use a transparent background on iOS to show the blur effect
+              position: 'absolute',
+            },
             default: {},
           }),
-          sceneStyle: {
-            backgroundColor: Colors[colorScheme ?? "dark"].background,
-          }
-        }}
-      >
+        }}>
         <Tabs.Screen
           name="games"
           options={{
-            title: "Games",
-            tabBarIcon: ({ color }) => <LucideGamepad2 color={color} />,
-            sceneStyle: { backgroundColor: Colors[colorScheme ?? "dark"].background,}
+            title: 'Games',
+            tabBarIcon: ({ color }) => <Ionicons name="game-controller-outline" size={24} color={colorScheme === "dark" ? "white" : "black"} />,
           }}
         />
         <Tabs.Screen
-          name="user-management"
+          name="account"
           options={{
-            title: "User",
-            tabBarIcon: ({ color }) => <User color={color} />,
+            title: 'Account',
+            tabBarIcon: ({ color }) => <Ionicons name="person-circle" size={24} color={colorScheme === "dark" ? "white" : "black"} />,
           }}
         />
       </Tabs>
-    </GluestackUIProvider>
+    </SafeAreaProvider>
   );
 }

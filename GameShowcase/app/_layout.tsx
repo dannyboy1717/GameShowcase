@@ -1,63 +1,30 @@
-// app/_layout.tsx
-import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import "@/global.css";
-import { Stack } from "expo-router"; // Use Stack here if this is the root
-import React from "react";
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import 'react-native-reanimated';
+import "@/global.css"
 
-// React Query / Persistence Imports
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-// Only if you use CardStyleInterpolators:
-// import { CardStyleInterpolators } from '@react-navigation/stack';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
 
-// Initialize QueryClient and Persister outside the component
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours
-    },
-  },
-});
-
-const asyncStoragePersister = createAsyncStoragePersister({
-  storage: AsyncStorage,
-});
-
-export default function RootAppLayout() {
-  const colorScheme = "dark";
+  if (!loaded) {
+    // Async font loading only occurs in development.
+    return null;
+  }
 
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister: asyncStoragePersister }}
-    >
-      <GluestackUIProvider mode={colorScheme ?? "dark"}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-            gestureEnabled: true,
-            animationDuration: 100,
-            contentStyle: {
-              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-            },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false, contentStyle: {
-              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-          } }} />
-          <Stack.Screen
-            name="screens/GameDetailScreen"
-            options={{
-              presentation: 'card',
-              headerShown: false,
-            }}
-          />
-        </Stack>
-      </GluestackUIProvider>
-    </PersistQueryClientProvider>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
   );
 }
