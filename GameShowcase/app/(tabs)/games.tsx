@@ -1,15 +1,17 @@
 "use client"
 
-import { View, FlatList, TouchableOpacity, Text } from "react-native"
-import { router } from "expo-router"
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { Button, FlatList, Text, TouchableOpacity, View } from "react-native";
 import { supabase } from "../lib/supabase";
 import { Game } from "../types/supabase";
-import { useRouter } from "expo-router";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GamesTab() {
   const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | undefined>(undefined);
   const router = useRouter();
 
   useEffect(() => {
@@ -17,13 +19,20 @@ export default function GamesTab() {
   }, []);
 
   async function fetchGames() {
+    setLoading(true);
+    setError(undefined);
+
     const { data, error } = await supabase
       .from("Games")
       .select("*");
+
+    setLoading(false);
+
     if (!error && data) {
       setGames(data as unknown as Game[]);
       console.log("Set games!")
     } else {
+      setError(error?.message || "Failed to load games.");
       console.log("error, ", error);
     }
   }
@@ -101,8 +110,41 @@ export default function GamesTab() {
     </TouchableOpacity>
   )
 
+  if (error) {
+    return (
+      <View className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <View className="flex flex-col items-center justify-center min-h-screen px-6">
+          <Text className="text-xl font-semibold text-black dark:text-white mb-2">
+            Oops! Something went wrong
+          </Text>
+          <Text className="text-muted-foreground text-center mb-6">{error}</Text>
+          <Button
+            title="Try Again"
+            onPress={fetchGames}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  if (!loading && games.length === 0) {
+    return (
+      <View className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <View className="flex flex-col items-center justify-center min-h-screen px-6">
+          <View className="text-6xl mb-4">🎮</View>
+          <Text className="text-xl font-semibold text-foreground mb-2">
+            No games available
+          </Text>
+          <Text className="text-black dark:text-white text-center mb-6">
+            Your game library is empty. Start building your collection!
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <SafeAreaView className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <FlatList
           data={games}
           keyExtractor={(item) => item.id.toString()}

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { View, TextInput, TouchableOpacity, Text, Alert, ActivityIndicator } from "react-native"
-import { supabase } from "../lib/supabase"
 import type { User } from "@supabase/supabase-js"
+import { useEffect, useState } from "react"
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from "react-native"
+import { supabase } from "../lib/supabase"
 
 export default function AccountTab() {
   const [email, setEmail] = useState("")
@@ -47,6 +47,7 @@ export default function AccountTab() {
     setLoading(false)
 
     if (signInError) {
+      console.log(signInError);
       setError(signInError.message)
     } else {
       Alert.alert("Success", "Logged in successfully!")
@@ -104,14 +105,6 @@ export default function AccountTab() {
     return (
       <View className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-1 justify-center px-8">
-          {/* Header */}
-          <View className="items-center mb-12">
-            <View className="w-24 h-24 bg-indigo-600 dark:bg-indigo-500 rounded-full items-center justify-center mb-6">
-              <Text className="text-white text-3xl font-bold">{user.email?.charAt(0).toUpperCase()}</Text>
-            </View>
-            <Text className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome!</Text>
-            <Text className="text-gray-600 dark:text-gray-400 text-center">You are successfully signed in</Text>
-          </View>
 
           {/* User Information Card */}
           <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 mb-8">
@@ -164,9 +157,6 @@ export default function AccountTab() {
       <View className="flex-1 justify-center px-8">
         {/* Header */}
         <View className="items-center mb-12">
-          <View className="w-20 h-20 bg-indigo-600 dark:bg-indigo-500 rounded-full items-center justify-center mb-6">
-            <Text className="text-white text-2xl font-bold">S</Text>
-          </View>
           <Text className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back</Text>
           <Text className="text-gray-600 dark:text-gray-400 text-center">Sign in to your account to continue</Text>
         </View>
