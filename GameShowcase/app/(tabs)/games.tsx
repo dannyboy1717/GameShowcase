@@ -129,7 +129,7 @@ export default function GamesTab() {
 
   if (!loading && games.length === 0) {
     return (
-      <View className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <View className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-indigo-900 dark:to-blue-800">
         <View className="flex flex-col items-center justify-center min-h-screen px-6">
           <View className="text-6xl mb-4">🎮</View>
           <Text className="text-xl font-semibold text-foreground mb-2">
@@ -145,13 +145,13 @@ export default function GamesTab() {
 
   return (
     <SafeAreaView className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <FlatList
-          data={games}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderGameItem}
-          contentContainerStyle={{ paddingTop: 16, paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-        />
+      <FlatList
+        data={games}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderGameItem}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   )
 }

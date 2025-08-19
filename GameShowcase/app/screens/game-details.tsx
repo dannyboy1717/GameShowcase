@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
-import { useLocalSearchParams, router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
+import { useEffect, useState } from "react"
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native"
 import { supabase } from "../lib/supabase"
 import { Game } from "../types/supabase"
 
@@ -224,7 +224,7 @@ export default function GameDetailsScreen() {
 
         {/* Action Buttons */}
         <View className="flex gap-3 pb-8">
-          <TouchableOpacity className="flex-1 bg-indigo-600 dark:bg-indigo-500 py-4 rounded-lg items-center">
+          <TouchableOpacity className="flex-1 bg-indigo-600 dark:bg-indigo-500 py-4 rounded-lg items-center" onPress={() => router.push(`/screens/edit-game?id=${game.id}`)}>
             <Text className="text-white font-semibold">Edit Game</Text>
           </TouchableOpacity>
           <TouchableOpacity className="flex-1 bg-gray-200 dark:bg-gray-700 py-4 rounded-lg items-center">
