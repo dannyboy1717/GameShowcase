@@ -44,7 +44,7 @@ export default function GamesTab() {
       case "finished":
         return "✓";
       case "completed":
-        return "100%";
+        return "👑";
       case "continuous":
         return "..."
       case "dropped":
@@ -63,7 +63,7 @@ export default function GamesTab() {
       case "finished":
         return "text-green-500";
       case "completed":
-        return "text-violet-500";
+        return "text-amber-300";
       case "continuous":
         return "text-black dark:text-white"
       case "dropped":

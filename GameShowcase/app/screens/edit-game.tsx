@@ -1,7 +1,9 @@
 "use client"
 
+import RatingPicker from "@/components/rating-picker"
+import StatusPicker from "@/components/status-picker"
 import { router, useLocalSearchParams } from "expo-router"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import {
     ActivityIndicator,
     Alert,
@@ -15,31 +17,31 @@ import { supabase } from "../lib/supabase"
 import { Game } from "../types/supabase"
 
 export default function EditGameScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>()
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [game, setGame] = useState<Partial<Game>>({})
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [game, setGame] = useState<Game | undefined>(undefined);
 
-    useEffect(() => {
-        if (id) {
-            fetchGameDetails()
-        }
-    }, [id])
-
-    const fetchGameDetails = async () => {
+    const fetchGameDetails = useCallback(async () => {
         try {
             setLoading(true)
             const { data, error } = await supabase.from("Games").select("*").eq("id", id).single()
 
             if (error) throw error
             setGame(data)
-        } catch (err: any) {
+        } catch {
             Alert.alert("Error", "Failed to load game details")
             router.back()
         } finally {
             setLoading(false)
         }
-    }
+    }, [id])
+
+    useEffect(() => {
+        if (id) {
+            fetchGameDetails()
+        }
+    }, [fetchGameDetails, id])
 
     const saveGame = async () => {
         try {
@@ -62,8 +64,9 @@ export default function EditGameScreen() {
         }
     }
 
-    const updateField = (field: keyof Game, value: string) => {
-        setGame(prev => ({ ...prev, [field]: value }))
+    function updateField(field: keyof Game, value: string) {
+        if (!game) return;
+        setGame(prev => prev ? { ...prev, [field]: value } as Game : prev)
     }
 
     const InputField = ({
@@ -97,68 +100,6 @@ export default function EditGameScreen() {
         </View>
     )
 
-    const StatusPicker = () => {
-        const statuses = ["Wishlist", "Playing", "Started", "Completed", "Finished", "Paused", "Dropped"]
-
-        return (
-            <View className="mb-4">
-                <Text className="text-gray-700 dark:text-gray-300 font-medium mb-2">Status</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-                    {statuses.map((status) => (
-                        <TouchableOpacity
-                            key={status}
-                            className={`mr-2 px-4 py-2 rounded-full border ${game.Status === status
-                                ? "bg-indigo-600 border-indigo-600"
-                                : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
-                                }`}
-                            onPress={() => updateField("Status", status)}
-                        >
-                            <Text
-                                className={`font-medium ${game.Status === status
-                                    ? "text-white"
-                                    : "text-gray-700 dark:text-gray-300"
-                                    }`}
-                            >
-                                {status}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-        )
-    }
-
-    const RatingPicker = () => {
-        const ratings = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        console.log(game.Rating);
-        return (
-            <View className="mb-4">
-                <Text className="text-gray-700 dark:text-gray-300 font-medium mb-2">Rating (1-10)</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-                    {ratings.map((rating) => (
-                        <TouchableOpacity
-                            key={rating}
-                            className={`mr-2 w-10 h-10 rounded-full border items-center justify-center ${game.Rating === rating
-                                ? "bg-yellow-400 border-yellow-400"
-                                : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
-                                }`}
-                            onPress={() => updateField("Rating", rating.toString())}
-                        >
-                            <Text
-                                className={`font-medium ${game.Rating === rating
-                                    ? "text-gray-800"
-                                    : "text-gray-700 dark:text-gray-300"
-                                    }`}
-                            >
-                                {rating}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-        )
-    }
-
     if (loading) {
         return (
             <View className="flex-1 justify-center items-center">
@@ -166,6 +107,27 @@ export default function EditGameScreen() {
                 <Text className="text-gray-600 dark:text-gray-400 mt-4">Loading game details...</Text>
             </View>
         )
+    }
+
+    const statuses = [
+        "Wishlist",
+        "Playing",
+        "Started",
+        "Completed",
+        "Finished",
+        "Paused",
+        "Dropped",
+    ];
+
+    if (!game) {
+        return (
+            <View className="flex-1 justify-center items-center">
+                <ActivityIndicator size="large" color="#6366f1" />
+                <Text className="text-gray-600 dark:text-gray-400 mt-4">
+                    Unable to fetch game details...
+                </Text>
+            </View>
+        );
     }
 
     return (
@@ -211,8 +173,8 @@ export default function EditGameScreen() {
                         placeholder="e.g., PC, PlayStation, Xbox, Switch"
                     />
 
-                    <StatusPicker />
-                    <RatingPicker />
+                    <StatusPicker statuses={statuses} updateField={updateField} game={game} />
+                    <RatingPicker game={game} updateField={updateField} />
                 </View>
 
                 {/* Timeline */}
