@@ -12,8 +12,9 @@ export default function RatingPicker({ game, value, onValueChange }: RatingPicke
     const ratings = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     useEffect(() => {
-        onValueChange(game.Rating ?? 1);
+        onValueChange(game.Rating ?? -1);
     }, [])
+
     return (
         <View className="mb-4">
             <Text className="text-gray-700 dark:text-gray-300 font-medium mb-2">Rating (1-10)</Text>

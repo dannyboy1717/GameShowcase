@@ -23,6 +23,7 @@ export default function EditGameScreen() {
     const [game, setGame] = useState<Game | undefined>(undefined);
 
     const [selectedRating, setSelectedRating] = useState<number>(game?.Rating ?? 1);
+    const [selectedStatus, setSelectedStatus] = useState<GameStatus>(game?.Status ?? "Plan to Play");
 
     const fetchGameDetails = useCallback(async () => {
         try {
@@ -124,7 +125,7 @@ export default function EditGameScreen() {
     }
 
     const statuses = [
-        "Wishlist",
+        "Plan to Play",
         "Playing",
         "Started",
         "Completed",
@@ -187,7 +188,7 @@ export default function EditGameScreen() {
                         placeholder="e.g., PC, PlayStation, Xbox, Switch"
                     />
 
-                    <StatusPicker statuses={statuses} updateField={updateField} game={game} />
+                    <StatusPicker statuses={statuses} selected={selectedStatus} onSelectedChange={setSelectedStatus} game={game} />
                     <RatingPicker game={game} value={selectedRating} onValueChange={setSelectedRating} />
                 </View>
 
