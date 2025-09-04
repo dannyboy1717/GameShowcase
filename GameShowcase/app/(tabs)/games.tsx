@@ -127,6 +127,17 @@ export default function GamesTab() {
     );
   }
 
+  if (loading) {
+    <View className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-indigo-900 dark:to-blue-800">
+      <View className="flex flex-col items-center justify-center min-h-screen px-6">
+        <View className="text-6xl mb-4">🎮</View>
+        <Text className="text-xl font-semibold text-foreground mb-2">
+          Loading...
+        </Text>
+      </View>
+    </View>
+  }
+
   if (!loading && games.length === 0) {
     return (
       <View className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-indigo-900 dark:to-blue-800">

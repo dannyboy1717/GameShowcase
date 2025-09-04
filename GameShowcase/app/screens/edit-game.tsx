@@ -14,13 +14,15 @@ import {
     View
 } from "react-native"
 import { supabase } from "../lib/supabase"
-import { Game } from "../types/supabase"
+import { Game, GameStatus } from "../types/supabase"
 
 export default function EditGameScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [game, setGame] = useState<Game | undefined>(undefined);
+
+    const [selectedRating, setSelectedRating] = useState<number>(game?.Rating ?? 1);
 
     const fetchGameDetails = useCallback(async () => {
         try {
@@ -43,7 +45,7 @@ export default function EditGameScreen() {
         }
     }, [fetchGameDetails, id])
 
-    const saveGame = async () => {
+    async function saveGame() {
         try {
             setSaving(true)
 
@@ -67,6 +69,18 @@ export default function EditGameScreen() {
     function updateField(field: keyof Game, value: string) {
         if (!game) return;
         setGame(prev => prev ? { ...prev, [field]: value } as Game : prev)
+    }
+
+    function setGameRating(rating: number) {
+        if (!game) return;
+        game.Rating = rating;
+        setGame(game);
+    }
+
+    function setGameStatus(status: GameStatus) {
+        if (!game) return;
+        game.Status = status;
+        setGame(game);
     }
 
     const InputField = ({
@@ -174,7 +188,7 @@ export default function EditGameScreen() {
                     />
 
                     <StatusPicker statuses={statuses} updateField={updateField} game={game} />
-                    <RatingPicker game={game} updateField={updateField} />
+                    <RatingPicker game={game} value={selectedRating} onValueChange={setSelectedRating} />
                 </View>
 
                 {/* Timeline */}
