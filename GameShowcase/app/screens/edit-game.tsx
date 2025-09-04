@@ -48,12 +48,19 @@ export default function EditGameScreen() {
 
     async function saveGame() {
         try {
-            setSaving(true)
+            setSaving(true);
+
+            if (!game) {
+                throw new Error("Tried to update a game that doesn't exist!");
+            }
+
+            game.Rating = selectedRating;
+            game.Status = selectedStatus;
 
             const { error } = await supabase
                 .from("Games")
                 .update(game)
-                .eq("id", id)
+                .eq("id", id);
 
             if (error) throw error
 
