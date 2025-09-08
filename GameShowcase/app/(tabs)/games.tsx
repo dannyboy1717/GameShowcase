@@ -6,17 +6,25 @@ import { Button, FlatList, Text, TouchableOpacity, View } from "react-native";
 import { supabase } from "../lib/supabase";
 import { Game } from "../types/supabase";
 
+import { User } from "@supabase/supabase-js";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GamesTab() {
+  const [user, setUser] = useState<User | null>(null)
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | undefined>(undefined);
   const router = useRouter();
 
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user.id !== user?.id) {
+      setUser(session?.user ?? null);
+    }
+  });
+
   useEffect(() => {
     fetchGames();
-  }, []);
+  }, [user]);
 
   async function fetchGames() {
     setLoading(true);
@@ -110,6 +118,18 @@ export default function GamesTab() {
     </TouchableOpacity>
   )
 
+  if (!user) {
+    return (
+      <View className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <View className="flex flex-col items-center justify-center min-h-screen px-6">
+          <Text className="text-xl font-semibold text-black dark:text-white mb-2">
+            You are not logged in! Please navigate to the Account page to log in.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   if (error) {
     return (
       <View className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -130,7 +150,7 @@ export default function GamesTab() {
   if (loading) {
     <View className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-indigo-900 dark:to-blue-800">
       <View className="flex flex-col items-center justify-center min-h-screen px-6">
-        <View className="text-6xl mb-4">🎮</View>
+        <Text className="text-6xl mb-4">🎮</Text>
         <Text className="text-xl font-semibold text-foreground mb-2">
           Loading...
         </Text>
