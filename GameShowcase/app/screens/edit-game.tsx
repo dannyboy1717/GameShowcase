@@ -3,7 +3,7 @@
 import RatingPicker from "@/components/rating-picker"
 import StatusPicker from "@/components/status-picker"
 import { router, useLocalSearchParams } from "expo-router"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import {
     ActivityIndicator,
     Alert,
@@ -14,7 +14,7 @@ import {
     View
 } from "react-native"
 import { supabase } from "../lib/supabase"
-import { Game, GameStatus } from "../types/supabase"
+import { Game, GamePlatform, GameStatus } from "../types/supabase"
 
 export default function EditGameScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,29 +22,50 @@ export default function EditGameScreen() {
     const [saving, setSaving] = useState(false);
     const [game, setGame] = useState<Game | undefined>(undefined);
 
-    const [selectedRating, setSelectedRating] = useState<number>(game?.Rating ?? 1);
+    const [selectedName, setSelectedName] = useState<string>(game?.Name ?? "");
+    const [selectedDeveloper, setSelectedDeveloper] = useState<string | undefined>(game?.["Developer/Publisher"] ?? undefined);
+    const [selectedPlatform, setSelectedPlatform] = useState<GamePlatform>(game?.Platform || "PC");
+    const [selectedStartDate, setSelectedStartDate] = useState<string | undefined>(game?.Started ?? undefined);
+    const [selectedFinishDate, setSelectedFinishDate] = useState<string | undefined>(game?.Finished ?? undefined);
+    const [selectedPlaytime, setSelectedPlaytime] = useState<string | undefined>(game?.Playtime ?? undefined);
+    const [selectedRating, setSelectedRating] = useState<number>(game?.Rating ?? -1);
     const [selectedStatus, setSelectedStatus] = useState<GameStatus>(game?.Status ?? "Plan to Play");
+    const [selectedBoughtDate, setSelectedBoughtDate] = useState<string | undefined>(game?.Bought ?? undefined);
+    const [selectedCost, setSelectedCost] = useState<string | undefined>(game?.Cost ?? undefined);
+    const [selectedComments, setSelectedComments] = useState<string | undefined>(game?.Comments ?? undefined);
 
-    const fetchGameDetails = useCallback(async () => {
+    async function fetchGameDetails() {
         try {
-            setLoading(true)
-            const { data, error } = await supabase.from("Games").select("*").eq("id", id).single()
+            setLoading(true);
+            const { data, error } = await supabase.from("Games").select("*").eq("id", id).single();
 
-            if (error) throw error
-            setGame(data)
+            if (error) throw error;
+
+            setGame(data);
+            setSelectedName(data.Name ?? "");
+            setSelectedDeveloper(data["Developer/Publisher"] ?? undefined);
+            setSelectedPlatform(data.Platform ?? "PC");
+            setSelectedStartDate(data.Started ?? undefined);
+            setSelectedFinishDate(data.Finished ?? undefined);
+            setSelectedPlaytime(data.Playtime ?? undefined);
+            setSelectedRating(data.Rating ?? -1);
+            setSelectedStatus(data.Status ?? "Plan to Play");
+            setSelectedBoughtDate(data.Bought ?? undefined);
+            setSelectedCost(data.Cost ?? undefined);
+            setSelectedComments(data.Comments ?? undefined);
         } catch {
-            Alert.alert("Error", "Failed to load game details")
-            router.back()
+            Alert.alert("Error", "Failed to load game details");
+            router.back();
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }, [id])
+    }
 
     useEffect(() => {
         if (id) {
-            fetchGameDetails()
+            void fetchGameDetails();
         }
-    }, [fetchGameDetails, id])
+    }, [])
 
     async function saveGame() {
         try {
@@ -54,29 +75,38 @@ export default function EditGameScreen() {
                 throw new Error("Tried to update a game that doesn't exist!");
             }
 
+            game.Name = selectedName;
+            game.Platform = selectedPlatform;
             game.Rating = selectedRating;
             game.Status = selectedStatus;
+            if (selectedPlaytime) game.Playtime = selectedPlaytime;
+            if (selectedBoughtDate) game.Bought = selectedBoughtDate;
+            if (selectedComments) game.Comments = selectedComments;
+            if (selectedCost) game.Cost = selectedCost;
+            if (selectedDeveloper) game["Developer/Publisher"] = selectedDeveloper;
+            if (selectedFinishDate) game.Finished = selectedFinishDate;
+            if (selectedStartDate) game.Started = selectedStartDate;
 
-            const { error } = await supabase
+            console.log("updated game:", game);
+
+            const { status, statusText, error } = await supabase
                 .from("Games")
-                .update(game)
-                .eq("id", id);
+                .upsert(game)
+                .eq("id", game.id);
 
-            if (error) throw error
+            if (error) throw error;
+
+            console.log(status);
+            console.log(statusText);
 
             Alert.alert("Success", "Game updated successfully!", [
                 { text: "OK", onPress: () => router.back() }
             ])
         } catch (err: any) {
-            Alert.alert("Error", "Failed to save game: " + err.message)
+            Alert.alert("Error", "Failed to save game: " + err.message);
         } finally {
-            setSaving(false)
+            setSaving(false);
         }
-    }
-
-    function updateField(field: keyof Game, value: string) {
-        if (!game) return;
-        setGame(prev => prev ? { ...prev, [field]: value } as Game : prev)
     }
 
     function setGameRating(rating: number) {
@@ -176,22 +206,22 @@ export default function EditGameScreen() {
 
                     <InputField
                         label="Game Name"
-                        value={game.Name}
-                        onChangeText={(text) => updateField("Name", text)}
+                        value={selectedName}
+                        onChangeText={setSelectedName}
                         placeholder="Enter game name"
                     />
 
                     <InputField
                         label="Developer/Publisher"
-                        value={game["Developer/Publisher"]}
-                        onChangeText={(text) => updateField("Developer/Publisher", text)}
+                        value={selectedDeveloper}
+                        onChangeText={setSelectedDeveloper}
                         placeholder="Enter developer or publisher"
                     />
 
                     <InputField
                         label="Platform"
-                        value={game.Platform}
-                        onChangeText={(text) => updateField("Platform", text)}
+                        value={selectedPlatform}
+                        onChangeText={(text) => setSelectedPlatform(text as GamePlatform)}
                         placeholder="e.g., PC, PlayStation, Xbox, Switch"
                     />
 
@@ -205,22 +235,22 @@ export default function EditGameScreen() {
 
                     <InputField
                         label="Started Date"
-                        value={game.Started}
-                        onChangeText={(text) => updateField("Started", text)}
+                        value={selectedStartDate}
+                        onChangeText={setSelectedStartDate}
                         placeholder="YYYY-MM-DD"
                     />
 
                     <InputField
                         label="Finished Date"
-                        value={game.Finished}
-                        onChangeText={(text) => updateField("Finished", text)}
+                        value={selectedFinishDate}
+                        onChangeText={setSelectedFinishDate}
                         placeholder="YYYY-MM-DD"
                     />
 
                     <InputField
                         label="Playtime"
-                        value={game.Playtime}
-                        onChangeText={(text) => updateField("Playtime", text)}
+                        value={selectedPlaytime}
+                        onChangeText={setSelectedPlaytime}
                         placeholder="e.g., 25 hours, 3 days"
                     />
                 </View>
@@ -231,15 +261,15 @@ export default function EditGameScreen() {
 
                     <InputField
                         label="Purchase Date"
-                        value={game.Bought}
-                        onChangeText={(text) => updateField("Bought", text)}
+                        value={selectedBoughtDate}
+                        onChangeText={setSelectedBoughtDate}
                         placeholder="YYYY-MM-DD"
                     />
 
                     <InputField
                         label="Cost"
-                        value={game.Cost}
-                        onChangeText={(text) => updateField("Cost", text)}
+                        value={selectedCost}
+                        onChangeText={setSelectedCost}
                         placeholder="e.g., $59.99, Free"
                         keyboardType="decimal-pad"
                     />
@@ -251,8 +281,8 @@ export default function EditGameScreen() {
 
                     <InputField
                         label="Notes & Comments"
-                        value={game.Comments}
-                        onChangeText={(text) => updateField("Comments", text)}
+                        value={selectedComments}
+                        onChangeText={setSelectedComments}
                         placeholder="Add your thoughts, notes, or review..."
                         multiline
                     />
