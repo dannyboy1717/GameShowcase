@@ -1,19 +1,12 @@
-import { Game } from "@/app/types/supabase";
-import { useEffect } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export interface RatingPickerProps {
-    game: Game;
     onValueChange: (rating: number) => void;
     value: number;
 }
 
-export default function RatingPicker({ game, value, onValueChange }: RatingPickerProps) {
+export default function RatingPicker({ value, onValueChange }: RatingPickerProps) {
     const ratings = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-    useEffect(() => {
-        onValueChange(game.Rating ?? -1);
-    }, [])
 
     return (
         <View className="mb-4">

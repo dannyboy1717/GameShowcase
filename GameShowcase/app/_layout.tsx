@@ -20,8 +20,11 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
+        <Stack.Screen name="screens/add-game" />
+        <Stack.Screen name="screens/game-details" />
+        <Stack.Screen name="screens/edit-game" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

@@ -1,20 +1,14 @@
-import { Game, GameStatus } from "@/app/types/supabase";
-import { useEffect } from "react";
+import { GameStatus } from "@/app/types/supabase";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export interface StatusPickerProps {
-    game: Game;
     onSelectedChange: (status: GameStatus) => void;
     selected: string;
     statuses: string[];
 }
 
 export default function StatusPicker(props: StatusPickerProps) {
-    const { game, onSelectedChange, selected, statuses } = props;
-
-    useEffect(() => {
-        onSelectedChange(game.Status ?? "Plan to Play");
-    }, []);
+    const { onSelectedChange, selected, statuses } = props;
 
     return (
         <View className="mb-4">
