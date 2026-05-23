@@ -14,7 +14,7 @@ import { supabase } from "../lib/supabase";
 import type { Database } from "../types/database";
 import { GamePlatform, GameStatus } from "../types/supabase";
 
-const platforms: GamePlatform[] = [
+export const platforms: GamePlatform[] = [
   "PC",
   "Xbox",
   "PS5",

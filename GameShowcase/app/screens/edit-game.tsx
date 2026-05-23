@@ -6,31 +6,15 @@ import RatingPicker from "@/components/rating-picker";
 import StatusPicker from "@/components/status-picker";
 import GlassButton from "@/components/ui/GlassButton";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 import { supabase } from "../lib/supabase";
 import type { Database } from "../types/database";
 import { Game, GamePlatform, GameStatus } from "../types/supabase";
-
-const platforms: GamePlatform[] = [
-  "PC",
-  "Xbox",
-  "PS5",
-  "PS4",
-  "PS3",
-  "PS2",
-  "PS1",
-  "PS Vita",
-  "PSP",
-  "Switch",
-  "Switch 2",
-  "3DS",
-  "DS",
-  "GBA",
-  "SNES",
-];
+import { platforms } from "./add-game";
 
 function InputField({
   label,
@@ -84,6 +68,8 @@ export default function EditGameScreen() {
   const [selectedBoughtDate, setSelectedBoughtDate] = useState<string | undefined>(undefined);
   const [selectedCost, setSelectedCost] = useState<string | undefined>(undefined);
   const [selectedComments, setSelectedComments] = useState<string | undefined>(undefined);
+
+  const bannerRef = useRef<BannerAd>(null);
 
   const fetchGameDetails = useCallback(async () => {
     try {
@@ -282,6 +268,7 @@ export default function EditGameScreen() {
               <Text className="text-white font-semibold">Save Changes</Text>
             )}
           </TouchableOpacity>
+          <BannerAd unitId={TestIds.BANNER} ref={bannerRef} size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER} />
         </View>
       </ScrollView>
     </SafeAreaView>

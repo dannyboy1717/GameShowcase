@@ -35,7 +35,7 @@ export default function AccountTab() {
     if (signInError) {
       setError(signInError.message);
     } else {
-      Alert.alert("Success", "Logged in successfully!");
+      router.replace("/(tabs)/games");
       setEmail("");
       setPassword("");
     }
@@ -87,9 +87,11 @@ export default function AccountTab() {
   if (user) {
     return (
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-        <View className="px-6 pt-2">
-          <GlassButton label="Back" onPress={() => router.back()} style={{ alignSelf: "flex-start", marginBottom: 12 }} />
-        </View>
+        {router.canGoBack() && (
+          <View className="px-6 pt-2">
+            <GlassButton label="Back" onPress={() => router.back()} style={{ alignSelf: "flex-start", marginBottom: 12 }} />
+          </View>
+        )}
         <View className="flex-1 justify-center px-8">
           <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 mb-8">
             <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Account Information</Text>

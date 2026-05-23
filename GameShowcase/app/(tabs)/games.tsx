@@ -43,6 +43,7 @@ export default function GamesTab() {
   const [sortBy, setSortBy] = useState<SortOption>("dateAdded");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [filterBy, setFilterBy] = useState<FilterOption>("All");
+  const [searchFilters, setSearchFilters] = useState<string>("");
   const { user, loading: authLoading } = useAuthSession();
   const router = useRouter();
 
@@ -71,8 +72,7 @@ export default function GamesTab() {
   async function fetchGames() {
     setLoadingGames(true);
     setError(undefined);
-
-    const { data, error } = await supabase.from("Games").select("*");
+    const { data, error } = await supabase.from("Games").select("*").eq("user_id", user?.id);
 
     setLoadingGames(false);
 
