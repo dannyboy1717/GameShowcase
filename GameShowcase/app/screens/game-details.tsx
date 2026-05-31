@@ -1,6 +1,5 @@
 "use client";
 
-import AccountButton from "@/components/AccountButton";
 import GlassButton from "@/components/ui/GlassButton";
 import { useFocusEffect } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -222,7 +221,6 @@ export default function GameDetailsScreen() {
         <SafeAreaView className="flex-1">
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
                 <View className="px-6 pt-4 pb-4">
-                    <AccountButton topOffset={0} />
                     <GlassButton label="Back" onPress={() => router.back()} style={{ alignSelf: "flex-start", marginBottom: 16 }} />
 
                     <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2" numberOfLines={3}>

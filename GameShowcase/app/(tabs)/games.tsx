@@ -1,14 +1,14 @@
 "use client";
 
-import AccountButton from "@/components/AccountButton";
 import AddGameButton from "@/components/AddGameButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Button, FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { Button, FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Host, Picker } from "@expo/ui/swift-ui";
 import { supabase } from "../lib/supabase";
 import { Game, GameStatus } from "../types/supabase";
 
@@ -108,30 +108,6 @@ export default function GamesTab() {
         return sortedGames;
     }
 
-    function handleSortPress(option: SortOption) {
-        if (sortBy === option) {
-            setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-            return;
-        }
-
-        setSortBy(option);
-        setSortDirection("asc");
-    }
-
-    function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-        return (
-            <Pressable
-                className={`mr-2 rounded-full border px-4 py-2 ${
-                    active
-                        ? "border-indigo-600 bg-indigo-600 dark:border-indigo-400 dark:bg-indigo-400"
-                        : "border-indigo-200 bg-white/85 dark:border-gray-700 dark:bg-gray-900/80"
-                }`}
-                onPress={onPress}
-            >
-                <Text className={`text-xs font-semibold ${active ? "text-white dark:text-gray-950" : "text-indigo-900 dark:text-gray-100"}`}>{label}</Text>
-            </Pressable>
-        );
-    }
 
     const getStatusLabel = (status: string) => {
         switch (status.toLowerCase()) {
@@ -250,7 +226,6 @@ export default function GamesTab() {
     if (!user) {
         return (
             <View className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-                <AccountButton />
                 <View className="flex-1 flex flex-col items-center justify-center px-6">
                     <Text className="text-xl font-semibold text-black dark:text-white mb-2">You are not logged in. Open the account page to sign in.</Text>
                 </View>
@@ -261,7 +236,6 @@ export default function GamesTab() {
     if (error) {
         return (
             <View className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-                <AccountButton />
                 <View className="flex-1 flex flex-col items-center justify-center px-6">
                     <Text className="text-xl font-semibold text-black dark:text-white mb-2">Oops! Something went wrong</Text>
                     <Text className="text-muted-foreground text-center mb-6">{error}</Text>
@@ -274,7 +248,6 @@ export default function GamesTab() {
     if (loadingGames) {
         return (
             <View className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-indigo-900 dark:to-blue-800">
-                <AccountButton />
                 <View className="flex-1 flex flex-col items-center justify-center px-6">
                     <Text className="text-xl font-semibold text-foreground mb-2">Loading...</Text>
                 </View>
@@ -285,7 +258,6 @@ export default function GamesTab() {
     if (games.length === 0) {
         return (
             <View className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-indigo-900 dark:to-blue-800">
-                <AccountButton />
                 <View className="flex-1 flex flex-col items-center justify-center px-6">
                     <Text className="text-xl font-semibold text-foreground mb-2">No games available</Text>
                     <Text className="text-black dark:text-white text-center mb-6">Your game library is empty. Start building your collection!</Text>
@@ -296,7 +268,6 @@ export default function GamesTab() {
 
     return (
         <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-            <AccountButton />
             <AddGameButton />
             <FlatList
                 data={displayedGames}
@@ -304,24 +275,43 @@ export default function GamesTab() {
                 renderItem={renderGameItem}
                 ListHeaderComponent={
                     <View className="px-4 pb-4">
-                        <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-indigo-900 dark:text-gray-200">Sort</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-                            {sortOptions.map((option) => (
-                                <FilterChip
-                                    key={option.value}
-                                    label={`${option.label}${sortBy === option.value ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}`}
-                                    active={sortBy === option.value}
-                                    onPress={() => handleSortPress(option.value)}
-                                />
-                            ))}
-                        </ScrollView>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+                            <View>
+                                <Text className="mb-1 text-xs font-bold uppercase tracking-wide text-indigo-900 dark:text-gray-200">Sort</Text>
+                                <Host matchContents>
+                                    <Picker
+                                        variant="menu"
+                                        options={sortOptions.map((option) => option.label)}
+                                        selectedIndex={sortOptions.findIndex((option) => option.value === sortBy)}
+                                        onOptionSelected={({ nativeEvent: { index } }) => setSortBy(sortOptions[index].value)}
+                                    />
+                                </Host>
+                            </View>
 
-                        <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-indigo-900 dark:text-gray-200">Filter</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            {filterOptions.map((option) => (
-                                <FilterChip key={option} label={option} active={filterBy === option} onPress={() => setFilterBy(option)} />
-                            ))}
-                        </ScrollView>
+                            <View>
+                                <Text className="mb-1 text-xs font-bold uppercase tracking-wide text-indigo-900 dark:text-gray-200">Order</Text>
+                                <Host matchContents>
+                                    <Picker
+                                        variant="menu"
+                                        options={["Ascending", "Descending"]}
+                                        selectedIndex={sortDirection === "asc" ? 0 : 1}
+                                        onOptionSelected={({ nativeEvent: { index } }) => setSortDirection(index === 0 ? "asc" : "desc")}
+                                    />
+                                </Host>
+                            </View>
+
+                            <View>
+                                <Text className="mb-1 text-xs font-bold uppercase tracking-wide text-indigo-900 dark:text-gray-200">Filter</Text>
+                                <Host matchContents>
+                                    <Picker
+                                        variant="menu"
+                                        options={[...filterOptions]}
+                                        selectedIndex={filterOptions.indexOf(filterBy)}
+                                        onOptionSelected={({ nativeEvent: { index } }) => setFilterBy(filterOptions[index])}
+                                    />
+                                </Host>
+                            </View>
+                        </View>
 
                         {displayedGames.length === 0 ? (
                             <View className="mt-8 items-center justify-center rounded-xl border border-indigo-200 bg-white/80 px-6 py-10 dark:border-gray-700 dark:bg-gray-900/70">

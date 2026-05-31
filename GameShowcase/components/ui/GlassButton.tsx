@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import {
-  Pressable,
   StyleSheet,
   Text,
   useColorScheme,
@@ -10,7 +9,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import GlassSurface from "@/components/ui/GlassSurface";
+import InteractiveGlass from "@/components/ui/InteractiveGlass";
 
 type GlassButtonProps = {
   label: string;
@@ -33,23 +32,22 @@ export default function GlassButton({
   const isDark = colorScheme === "dark";
 
   return (
-    <Pressable disabled={disabled} onPress={onPress} style={style}>
-      {({ pressed }) => (
-        <GlassSurface
-          style={[
-            styles.surface,
-            isDark ? styles.surfaceDark : styles.surfaceLight,
-            pressed ? styles.surfacePressed : null,
-            disabled ? styles.surfaceDisabled : null,
-          ]}
-        >
-          <View style={styles.content}>
-            {leading ? <View style={styles.leading}>{leading}</View> : null}
-            <Text style={[styles.label, isDark ? styles.labelDark : styles.labelLight, textStyle]}>{label}</Text>
-          </View>
-        </GlassSurface>
-      )}
-    </Pressable>
+    <InteractiveGlass
+      draggable={false}
+      disabled={disabled}
+      onPress={onPress}
+      containerStyle={style}
+      style={[
+        styles.surface,
+        isDark ? styles.surfaceDark : styles.surfaceLight,
+        disabled ? styles.surfaceDisabled : null,
+      ]}
+    >
+      <View style={styles.content}>
+        {leading ? <View style={styles.leading}>{leading}</View> : null}
+        <Text style={[styles.label, isDark ? styles.labelDark : styles.labelLight, textStyle]}>{label}</Text>
+      </View>
+    </InteractiveGlass>
   );
 }
 
@@ -70,9 +68,6 @@ const styles = StyleSheet.create({
   },
   surfaceDark: {
     backgroundColor: "rgba(15, 23, 42, 0.30)",
-  },
-  surfacePressed: {
-    transform: [{ scale: 0.98 }],
   },
   surfaceDisabled: {
     opacity: 0.6,

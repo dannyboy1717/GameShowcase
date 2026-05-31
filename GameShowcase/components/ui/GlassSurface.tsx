@@ -14,20 +14,32 @@ import {
 type GlassSurfaceProps = PropsWithChildren<
   ViewProps & {
     style?: StyleProp<ViewStyle>;
+    tintColor?: string;
+    /**
+     * Enables the native liquid-glass interactive highlight on iOS 26+.
+     * Has no effect on the BlurView/web fallbacks.
+     */
+    interactive?: boolean;
   }
 >;
 
-export default function GlassSurface({ children, style, ...rest }: GlassSurfaceProps) {
+export default function GlassSurface({ children, style, tintColor, interactive, ...rest }: GlassSurfaceProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const baseStyle = [styles.base, isDark ? styles.baseDark : styles.baseLight, style];
+  const baseStyle = [
+    styles.base,
+    isDark ? styles.baseDark : styles.baseLight,
+    tintColor ? { backgroundColor: tintColor } : undefined,
+    style,
+  ];
 
   if (Platform.OS === "ios" && isLiquidGlassAvailable()) {
     return (
       <GlassView
         {...rest}
         glassEffectStyle="regular"
-        tintColor={isDark ? "rgba(99, 102, 241, 0.16)" : "rgba(255, 255, 255, 0.18)"}
+        isInteractive={interactive}
+        tintColor={tintColor ?? (isDark ? "rgba(99, 102, 241, 0.16)" : "rgba(255, 255, 255, 0.18)")}
         style={baseStyle}
       >
         {children}

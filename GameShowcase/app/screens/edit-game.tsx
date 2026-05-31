@@ -1,6 +1,5 @@
 "use client";
 
-import AccountButton from "@/components/AccountButton";
 import PlatformPicker from "@/components/platform-picker";
 import RatingPicker from "@/components/rating-picker";
 import StatusPicker from "@/components/status-picker";
@@ -166,7 +165,6 @@ export default function EditGameScreen() {
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
             >
                 <View className="px-6 pt-4 pb-4">
-                    <AccountButton topOffset={0} />
                     <GlassButton label="Cancel" onPress={() => router.back()} style={{ alignSelf: "flex-start", marginBottom: 16 }} />
 
                     <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Edit Game</Text>
