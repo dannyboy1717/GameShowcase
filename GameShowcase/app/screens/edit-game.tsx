@@ -4,11 +4,11 @@ import PlatformPicker from "@/components/platform-picker";
 import RatingPicker from "@/components/rating-picker";
 import StatusPicker from "@/components/status-picker";
 import GlassButton from "@/components/ui/GlassButton";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-// import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 import type { Database } from "../types/database";
 import { GamePlatform, GameStatus } from "../types/supabase";
@@ -50,11 +50,29 @@ function InputField({
 }
 
 export default function EditGameScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
+    // igdbId/coverUrl/name/developer arrive when returning from screens/search-game
+    // after matching this entry. They seed the form but aren't persisted until Save.
+    const {
+        id,
+        igdbId: matchedIgdbId,
+        coverUrl: matchedCoverUrl,
+        name: matchedName,
+        developer: matchedDeveloper,
+    } = useLocalSearchParams<{
+        id: string;
+        igdbId?: string;
+        coverUrl?: string;
+        name?: string;
+        developer?: string;
+    }>();
+
     const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { getGameById, updateGame } = useGames();
+
+    const [igdbId, setIgdbId] = useState<number | null>(null);
+    const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
     const [selectedName, setSelectedName] = useState<string>("");
     const [selectedDeveloper, setSelectedDeveloper] = useState<string | undefined>(undefined);
@@ -68,7 +86,6 @@ export default function EditGameScreen() {
     const [selectedCost, setSelectedCost] = useState<string | undefined>(undefined);
     const [selectedComments, setSelectedComments] = useState<string | undefined>(undefined);
 
-    // const bannerRef = useRef<BannerAd>(null);
 
     const fetchGameDetails = useCallback(async () => {
         try {
@@ -80,8 +97,13 @@ export default function EditGameScreen() {
                 throw new Error("Game not found");
             }
 
-            setSelectedName(existingGame.Name ?? "");
-            setSelectedDeveloper(existingGame["Developer/Publisher"] ?? undefined);
+            // A fresh match from search-game wins over what's stored, so the
+            // picked game shows immediately; Save is what commits it.
+            setIgdbId(matchedIgdbId ? Number(matchedIgdbId) : existingGame.IgdbId);
+            setCoverUrl(matchedCoverUrl || existingGame.CoverUrl);
+
+            setSelectedName(matchedName || existingGame.Name || "");
+            setSelectedDeveloper(matchedDeveloper || existingGame["Developer/Publisher"] || undefined);
             setSelectedPlatform(existingGame.Platform ?? "PC");
             setSelectedStartDate(existingGame.Started ?? undefined);
             setSelectedFinishDate(existingGame.Finished ?? undefined);
@@ -97,7 +119,7 @@ export default function EditGameScreen() {
         } finally {
             setLoading(false);
         }
-    }, [getGameById, id]);
+    }, [getGameById, id, matchedIgdbId, matchedCoverUrl, matchedName, matchedDeveloper]);
 
     useEffect(() => {
         if (id) {
@@ -125,6 +147,8 @@ export default function EditGameScreen() {
                 Bought: selectedBoughtDate?.trim() || null,
                 Cost: selectedCost?.trim() || null,
                 Comments: selectedComments?.trim() || null,
+                IgdbId: igdbId,
+                CoverUrl: coverUrl,
             };
 
             await updateGame(Number(id), updatedGame);
@@ -174,6 +198,42 @@ export default function EditGameScreen() {
                 <View className="px-6">
                     <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
                         <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Basic Information</Text>
+
+                        <View className="flex-row items-center mb-4">
+                            {coverUrl ? (
+                                <Image
+                                    source={{ uri: coverUrl }}
+                                    style={{ width: 60, height: 80, borderRadius: 8 }}
+                                    contentFit="cover"
+                                    transition={150}
+                                />
+                            ) : (
+                                <View
+                                    style={{ width: 60, height: 80, borderRadius: 8 }}
+                                    className="bg-gray-200 dark:bg-gray-700 items-center justify-center"
+                                >
+                                    <Text className="text-2xl text-gray-400 dark:text-gray-500">?</Text>
+                                </View>
+                            )}
+
+                            <View className="ml-3 flex-1">
+                                <Text className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                                    {igdbId ? "Matched on IGDB" : "No IGDB match"}
+                                </Text>
+                                <Pressable
+                                    onPress={() =>
+                                        router.replace({
+                                            pathname: "/screens/search-game",
+                                            params: { editId: String(id), initialQuery: selectedName },
+                                        })
+                                    }
+                                >
+                                    <Text className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                                        {igdbId ? "Change match" : "Match on IGDB"}
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        </View>
 
                         <InputField label="Game Name" value={selectedName} onChangeText={setSelectedName} placeholder="Enter game name" />
 
@@ -240,7 +300,6 @@ export default function EditGameScreen() {
                             <Text className="text-white font-semibold">Save Changes</Text>
                         )}
                     </TouchableOpacity>
-                    {/* <BannerAd unitId={TestIds.BANNER} ref={bannerRef} size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER} /> */}
                 </View>
             </ScrollView>
         </SafeAreaView>
