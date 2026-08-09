@@ -2,6 +2,7 @@
 
 import GlassButton from "@/components/ui/GlassButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import { useToast } from "@/hooks/useToast";
 import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -16,6 +17,7 @@ export default function AccountTab() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const { user, loading: initialLoading } = useAuthSession();
+  const { showToast } = useToast();
 
   async function signIn() {
     if (!email || !password) {
@@ -83,7 +85,7 @@ export default function AccountTab() {
     if (error) {
       Alert.alert("Error", error.message);
     } else {
-      Alert.alert("Success", "Signed out successfully!");
+      showToast("Signed out");
     }
   }
 

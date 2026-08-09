@@ -2,6 +2,7 @@
 
 import GlassButton from "@/components/ui/GlassButton";
 import { useGames } from "@/hooks/useGames";
+import { useToast } from "@/hooks/useToast";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -16,6 +17,7 @@ export default function GameDetailsScreen() {
     // Reads from shared state, so edits and deletes made elsewhere are already
     // reflected here — no refetch on focus needed.
     const { getGameById, deleteGame, loadingGames } = useGames();
+    const { showToast } = useToast();
     const game = getGameById(Number(id));
 
     const getStatusColor = (status: string | null) => {
@@ -150,11 +152,17 @@ export default function GameDetailsScreen() {
             return;
         }
 
+        // Captured up front: deleteGame removes the row from shared state, so
+        // `game` is already undefined by the time the await resolves.
+        const deletedName = game.Name || "Game";
+        const deletedId = game.id;
+
         try {
             setDeleting(true);
-            await deleteGame(game.id);
+            await deleteGame(deletedId);
 
-            Alert.alert("Success", "Game deleted successfully.", [{ text: "OK", onPress: () => router.back() }]);
+            router.back();
+            showToast(`${deletedName} deleted`);
         } catch (err: any) {
             Alert.alert("Error", "Failed to delete game: " + err.message);
         } finally {

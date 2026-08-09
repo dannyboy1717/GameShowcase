@@ -11,6 +11,7 @@ import { AdsProvider } from '@/hooks/useAds';
 import { AuthSessionProvider } from '@/hooks/useAuthSession';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { GamesProvider } from '@/hooks/useGames';
+import { ToastProvider } from '@/hooks/useToast';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -30,15 +31,18 @@ export default function RootLayout() {
         <AuthSessionProvider>
           <AdsProvider>
             <GamesProvider>
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
-                <Stack.Screen name="screens/search-game" />
-                <Stack.Screen name="screens/add-game" />
-                <Stack.Screen name="screens/game-details" />
-                <Stack.Screen name="screens/edit-game" />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <AccountButton />
+              {/* Innermost so the toast renders above every screen. */}
+              <ToastProvider>
+                <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
+                  <Stack.Screen name="screens/search-game" />
+                  <Stack.Screen name="screens/add-game" />
+                  <Stack.Screen name="screens/game-details" />
+                  <Stack.Screen name="screens/edit-game" />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+                <AccountButton />
+              </ToastProvider>
             </GamesProvider>
           </AdsProvider>
         </AuthSessionProvider>

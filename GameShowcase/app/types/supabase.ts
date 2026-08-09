@@ -26,6 +26,12 @@ export type GamePlatform =
 
 export interface Game {
   id: number;
+  /**
+   * Owner. Every read is filtered by this and the RLS policy keys off it, so a
+   * row without it is invisible to everyone — including the person who created
+   * it. Always set explicitly on insert rather than trusting a column default.
+   */
+  user_id: string;
   Name: string | null;
   Started: string | null;
   Finished: string | null;

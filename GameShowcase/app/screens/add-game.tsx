@@ -5,14 +5,14 @@ import RatingPicker from "@/components/rating-picker";
 import StatusPicker from "@/components/status-picker";
 import GlassButton from "@/components/ui/GlassButton";
 import { useAds } from "@/hooks/useAds";
-import { useGames } from "@/hooks/useGames";
+import { useGames, type NewGame } from "@/hooks/useGames";
+import { useToast } from "@/hooks/useToast";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { Database } from "../types/database";
 import { GamePlatform, GameStatus } from "../types/supabase";
 
 export const platforms: GamePlatform[] = [
@@ -88,6 +88,7 @@ export default function AddGameScreen() {
   const insets = useSafeAreaInsets();
   const { addGame } = useGames();
   const { maybeShowInterstitial } = useAds();
+  const { showToast } = useToast();
 
   // Seeded by screens/search-game when a game is picked from IGDB. Absent when
   // the user chose to enter a game manually, which leaves every field blank.
@@ -123,7 +124,7 @@ export default function AddGameScreen() {
         throw new Error("Game name is required.");
       }
 
-      const newGame: Database["public"]["Tables"]["Games"]["Insert"] = {
+      const newGame: NewGame = {
         Name: selectedName.trim(),
         "Developer/Publisher": selectedDeveloper?.trim() || null,
         Platform: selectedPlatform || null,
@@ -142,18 +143,15 @@ export default function AddGameScreen() {
       await addGame(newGame);
 
       // Finishing an add is the one genuine task boundary in the app, which is
-      // where Google says interstitials belong. It runs after the confirmation
-      // and before returning to the list, so it reads as a break between tasks
-      // rather than an interruption of one. Frequency capping lives in
+      // where Google says interstitials belong. Frequency capping lives in
       // app/lib/ads.ts — most adds show nothing.
-      Alert.alert("Success", "Game added successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            void maybeShowInterstitial().finally(() => router.back());
-          },
-        },
-      ]);
+      await maybeShowInterstitial();
+
+      // Back first, then confirm: the toast is app-level, so it lands on the
+      // games list next to the game that was just added rather than flashing on
+      // a screen that is being popped.
+      router.back();
+      showToast(`${newGame.Name} added`);
     } catch (err: any) {
       Alert.alert("Error", "Failed to add game: " + err.message);
     } finally {

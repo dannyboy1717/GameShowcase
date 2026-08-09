@@ -8,13 +8,19 @@ import { supabase } from "@/app/lib/supabase";
 import { Game } from "@/app/types/supabase";
 import { Database } from "@/app/types/database";
 
+/**
+ * What a screen supplies when adding a game. Ownership is not the screen's
+ * business — addGame stamps user_id from the active session.
+ */
+export type NewGame = Omit<Database["public"]["Tables"]["Games"]["Insert"], "user_id">;
+
 type GamesContextType = {
     games: Game[];
     loadingGames: boolean;
     error?: string;
     fetchGames: () => Promise<void>;
     getGameById: (id: number) => Game | undefined;
-    addGame: (newGame: Database["public"]["Tables"]["Games"]["Insert"]) => Promise<Game>;
+    addGame: (newGame: NewGame) => Promise<Game>;
     updateGame: (id: number, updatedGame: Database["public"]["Tables"]["Games"]["Update"]) => Promise<void>;
     deleteGame: (id: number) => Promise<void>;
     setGames: React.Dispatch<React.SetStateAction<Game[]>>;
@@ -62,21 +68,33 @@ export function GamesProvider({ children }: GamesProviderProps) {
         [games]
     );
 
-    const addGame = useCallback(async (newGame: Database["public"]["Tables"]["Games"]["Insert"]): Promise<Game> => {
-        // .select().single() returns the persisted row, so we pick up the
-        // database-generated id and the server-defaulted user_id.
-        const { data, error } = await supabase.from("Games").insert(newGame).select().single();
+    const addGame = useCallback(
+        async (newGame: NewGame): Promise<Game> => {
+            if (!user) {
+                throw new Error("You must be signed in to add a game.");
+            }
 
-        if (error) {
-            throw error;
-        }
+            // user_id is set here rather than left to a column default. Without
+            // it the row is orphaned: every read filters on user_id, so the game
+            // appears in local state and then vanishes on the next fetch.
+            const { data, error } = await supabase
+                .from("Games")
+                .insert({ ...newGame, user_id: user.id })
+                .select()
+                .single();
 
-        const insertedGame = data as Game;
+            if (error) {
+                throw error;
+            }
 
-        setGames((currentGames) => [...currentGames, insertedGame]);
+            const insertedGame = data as Game;
 
-        return insertedGame;
-    }, []);
+            setGames((currentGames) => [...currentGames, insertedGame]);
+
+            return insertedGame;
+        },
+        [user]
+    );
 
     const updateGame = useCallback(async (id: number, updatedGame: Database["public"]["Tables"]["Games"]["Update"]): Promise<void> => {
         const { data, error } = await supabase.from("Games").update(updatedGame).eq("id", id).select().single();

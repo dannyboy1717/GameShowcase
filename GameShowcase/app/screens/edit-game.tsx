@@ -14,6 +14,7 @@ import type { Database } from "../types/database";
 import { GamePlatform, GameStatus } from "../types/supabase";
 import { platforms } from "./add-game";
 import { useGames } from "@/hooks/useGames";
+import { useToast } from "@/hooks/useToast";
 
 function InputField({
     label,
@@ -70,6 +71,7 @@ export default function EditGameScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { getGameById, updateGame } = useGames();
+    const { showToast } = useToast();
 
     const [igdbId, setIgdbId] = useState<number | null>(null);
     const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -153,7 +155,8 @@ export default function EditGameScreen() {
 
             await updateGame(Number(id), updatedGame);
 
-            Alert.alert("Success", "Game updated successfully!", [{ text: "OK", onPress: () => router.back() }]);
+            router.back();
+            showToast(`${selectedName.trim() || "Game"} updated`);
         } catch (err: any) {
             Alert.alert("Error", "Failed to save game: " + err.message);
         } finally {
