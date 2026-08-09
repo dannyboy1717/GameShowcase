@@ -4,6 +4,7 @@ import PlatformPicker from "@/components/platform-picker";
 import RatingPicker from "@/components/rating-picker";
 import StatusPicker from "@/components/status-picker";
 import GlassButton from "@/components/ui/GlassButton";
+import { useAds } from "@/hooks/useAds";
 import { useGames } from "@/hooks/useGames";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -86,6 +87,7 @@ function parseSeededPlatform(raw: string | undefined): GamePlatform {
 export default function AddGameScreen() {
   const insets = useSafeAreaInsets();
   const { addGame } = useGames();
+  const { maybeShowInterstitial } = useAds();
 
   // Seeded by screens/search-game when a game is picked from IGDB. Absent when
   // the user chose to enter a game manually, which leaves every field blank.
@@ -139,7 +141,19 @@ export default function AddGameScreen() {
 
       await addGame(newGame);
 
-      Alert.alert("Success", "Game added successfully!", [{ text: "OK", onPress: () => router.back() }]);
+      // Finishing an add is the one genuine task boundary in the app, which is
+      // where Google says interstitials belong. It runs after the confirmation
+      // and before returning to the list, so it reads as a break between tasks
+      // rather than an interruption of one. Frequency capping lives in
+      // app/lib/ads.ts — most adds show nothing.
+      Alert.alert("Success", "Game added successfully!", [
+        {
+          text: "OK",
+          onPress: () => {
+            void maybeShowInterstitial().finally(() => router.back());
+          },
+        },
+      ]);
     } catch (err: any) {
       Alert.alert("Error", "Failed to add game: " + err.message);
     } finally {

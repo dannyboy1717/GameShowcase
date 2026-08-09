@@ -42,6 +42,7 @@
   },
   "react-native-google-mobile-ads": {
     "ios_app_id": "ca-app-pub-9221208917509978~9775379861",
+    "android_app_id": "ca-app-pub-9221208917509978~REPLACE_ME",
     "sk_ad_network_items": [
       "cstr6suwn9.skadnetwork",
       "4fzdc2evr5.skadnetwork",
