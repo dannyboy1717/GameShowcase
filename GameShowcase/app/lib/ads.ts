@@ -27,17 +27,33 @@ const MIN_INTERSTITIAL_GAP_MS = 90_000;
 let interstitial: InterstitialAd | null = null;
 let adsInitialized = false;
 
-/** Waits for the app to be foregrounded — iOS discards an ATT prompt otherwise. */
-function whenActive(): Promise<void> {
+/** How long to wait for the foreground before giving up on the ATT prompt. */
+const ACTIVE_WAIT_TIMEOUT_MS = 10_000;
+
+/**
+ * Waits for the app to be foregrounded — iOS discards an ATT prompt otherwise.
+ *
+ * Resolves false if the app never becomes active within the timeout, so a
+ * launch that happens in the background can't leave bootstrap pending forever
+ * with a dangling AppState subscription.
+ */
+function waitForActive(): Promise<boolean> {
     if (AppState.currentState === "active") {
-        return Promise.resolve();
+        return Promise.resolve(true);
     }
 
     return new Promise((resolve) => {
+        const finish = (didBecomeActive: boolean) => {
+            clearTimeout(timer);
+            subscription.remove();
+            resolve(didBecomeActive);
+        };
+
+        const timer = setTimeout(() => finish(false), ACTIVE_WAIT_TIMEOUT_MS);
+
         const subscription = AppState.addEventListener("change", (state) => {
             if (state === "active") {
-                subscription.remove();
-                resolve();
+                finish(true);
             }
         });
     });
@@ -85,12 +101,13 @@ export async function bootstrapAds(): Promise<boolean> {
             return false;
         }
 
-        if (Platform.OS === "ios") {
-            await whenActive();
+        if (Platform.OS === "ios" && (await waitForActive())) {
             const status = await check(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
 
             // Only DENIED means "not asked yet" here; GRANTED/BLOCKED/LIMITED are all
-            // settled answers and re-requesting would do nothing.
+            // settled answers and re-requesting would do nothing. If the app never
+            // came to the foreground we skip the prompt and still initialize —
+            // ads just stay non-personalized until we can ask.
             if (status === RESULTS.DENIED) {
                 await request(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
             }
@@ -146,6 +163,13 @@ async function readNumber(key: string): Promise<number> {
  */
 export async function maybeShowInterstitial(): Promise<void> {
     try {
+        // Don't accrue count while ads are switched off — otherwise a user who
+        // declined consent builds up a tally and gets an ad on their very next
+        // add if they later accept.
+        if (!adsInitialized) {
+            return;
+        }
+
         const completedAdds = (await readNumber(COMPLETED_ADDS_KEY)) + 1;
         await AsyncStorage.setItem(COMPLETED_ADDS_KEY, String(completedAdds));
 
@@ -159,6 +183,9 @@ export async function maybeShowInterstitial(): Promise<void> {
         }
 
         if (!interstitial?.loaded) {
+            // Nothing to show, so give the count back rather than burning this
+            // slot and making the user wait another full cycle.
+            await AsyncStorage.setItem(COMPLETED_ADDS_KEY, String(completedAdds - 1));
             return;
         }
 
