@@ -33,6 +33,12 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Supabase — IGDB credentials are set with `supabase secrets set` and must
+# never be committed. .temp holds the linked project ref.
+supabase/.env
+supabase/.branches
+supabase/.temp
+
 # typescript
 *.tsbuildinfo
 

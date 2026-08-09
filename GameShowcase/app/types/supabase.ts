@@ -37,4 +37,6 @@ export interface Game {
   Bought: string | null;
   Cost: string | null;
   Comments: string | null;
+  IgdbId: number | null;
+  CoverUrl: string | null;
 }

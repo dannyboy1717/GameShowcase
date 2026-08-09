@@ -1,55 +1,22 @@
 "use client";
 
 import GlassButton from "@/components/ui/GlassButton";
-import { useFocusEffect } from "@react-navigation/native";
+import { useGames } from "@/hooks/useGames";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { supabase } from "../lib/supabase";
-import { Game } from "../types/supabase";
 
 export default function GameDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
-    const [game, setGame] = useState<Game | null>(null);
-    const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
-    const [error, setError] = useState("");
 
-    const fetchGameDetails = useCallback(async () => {
-        try {
-            setLoading(true);
-            const { data, error } = await supabase.from("Games").select("*").eq("id", id).single();
-
-            if (error) {
-                throw error;
-            }
-
-            setGame(data);
-            setError("");
-        } catch (err: any) {
-            setError(err.message);
-            Alert.alert("Error", "Failed to load game details");
-        } finally {
-            setLoading(false);
-        }
-    }, [id]);
-
-    useEffect(() => {
-        if (id) {
-            void fetchGameDetails();
-        }
-    }, [fetchGameDetails, id]);
-
-    useFocusEffect(
-        useCallback(() => {
-            if (id) {
-                void fetchGameDetails();
-            }
-        }, [fetchGameDetails, id])
-    );
+    // Reads from shared state, so edits and deletes made elsewhere are already
+    // reflected here — no refetch on focus needed.
+    const { getGameById, deleteGame, loadingGames } = useGames();
+    const game = getGameById(Number(id));
 
     const getStatusColor = (status: string | null) => {
         if (!status) {
@@ -172,24 +139,20 @@ export default function GameDetailsScreen() {
                 text: "Delete",
                 style: "destructive",
                 onPress: () => {
-                    void deleteGame();
+                    void performDelete();
                 },
             },
         ]);
     }
 
-    async function deleteGame() {
+    async function performDelete() {
         if (!game) {
             return;
         }
 
         try {
             setDeleting(true);
-            const { error } = await supabase.from("Games").delete().eq("id", game.id);
-
-            if (error) {
-                throw error;
-            }
+            await deleteGame(game.id);
 
             Alert.alert("Success", "Game deleted successfully.", [{ text: "OK", onPress: () => router.back() }]);
         } catch (err: any) {
@@ -199,7 +162,7 @@ export default function GameDetailsScreen() {
         }
     }
 
-    if (loading) {
+    if (loadingGames) {
         return (
             <View className="flex-1 justify-center items-center">
                 <ActivityIndicator size="large" color="#6366f1" />
@@ -208,11 +171,11 @@ export default function GameDetailsScreen() {
         );
     }
 
-    if (error || !game) {
+    if (!game) {
         return (
             <View className="flex-1 justify-center items-center px-8">
-                <Text className="text-red-600 dark:text-red-400 text-lg font-medium mb-4">Failed to load game details</Text>
-                <GlassButton label="Try Again" onPress={() => void fetchGameDetails()} />
+                <Text className="text-red-600 dark:text-red-400 text-lg font-medium mb-4">Game not found</Text>
+                <GlassButton label="Back" onPress={() => router.back()} />
             </View>
         );
     }
@@ -222,6 +185,15 @@ export default function GameDetailsScreen() {
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
                 <View className="px-6 pt-4 pb-4">
                     <GlassButton label="Back" onPress={() => router.back()} style={{ alignSelf: "flex-start", marginBottom: 16 }} />
+
+                    {game.CoverUrl ? (
+                        <Image
+                            source={{ uri: game.CoverUrl }}
+                            style={{ width: 140, height: 187, borderRadius: 10, marginBottom: 16 }}
+                            contentFit="cover"
+                            transition={200}
+                        />
+                    ) : null}
 
                     <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2" numberOfLines={3}>
                         {game.Name || "Untitled Game"}

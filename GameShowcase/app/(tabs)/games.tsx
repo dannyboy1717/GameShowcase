@@ -2,14 +2,14 @@
 
 import AddGameButton from "@/components/AddGameButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
-import { useFocusEffect } from "@react-navigation/native";
+import { useGames } from "@/hooks/useGames";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Host, Picker } from "@expo/ui/swift-ui";
-import { supabase } from "../lib/supabase";
+import { Image } from "expo-image";
 import { Game, GameStatus } from "../types/supabase";
 
 type SortOption = "dateAdded" | "alphabetical" | "dateStarted" | "dateFinished" | "rating";
@@ -28,43 +28,12 @@ const filterOptions: FilterOption[] = ["All", "Plan to Play", "Started", "Finish
 
 export default function GamesTab() {
     const insets = useSafeAreaInsets();
-    const [games, setGames] = useState<Game[]>([]);
-    const [loadingGames, setLoadingGames] = useState(true);
-    const [error, setError] = useState<string | undefined>(undefined);
     const [sortBy, setSortBy] = useState<SortOption>("dateAdded");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
     const [filterBy, setFilterBy] = useState<FilterOption>("All");
-    const [searchFilters, setSearchFilters] = useState<string>("");
     const { user, loading: authLoading } = useAuthSession();
+    const { games, loadingGames, error, fetchGames } = useGames();
     const router = useRouter();
-
-    useEffect(() => {
-        if (authLoading) {
-            return;
-        }
-
-        if (!user) {
-            setGames([]);
-            setLoadingGames(false);
-            return;
-        }
-
-        fetchGames();
-    }, [authLoading, user]);
-
-    async function fetchGames() {
-        setLoadingGames(true);
-        setError(undefined);
-        const { data, error } = await supabase.from("Games").select("*").eq("user_id", user?.id);
-
-        setLoadingGames(false);
-
-        if (!error && data) {
-            setGames(data as unknown as Game[]);
-        } else {
-            setError(error?.message || "Failed to load games.");
-        }
-    }
 
     function parseSortableDate(value: string | null) {
         if (!value) {
@@ -192,6 +161,15 @@ export default function GamesTab() {
             onPress={() => router.push(`/screens/game-details?id=${item.id}`)}
         >
             <View className="flex-row items-center justify-between">
+                {item.CoverUrl ? (
+                    <Image
+                        source={{ uri: item.CoverUrl }}
+                        style={{ width: 48, height: 64, borderRadius: 6, marginRight: 12 }}
+                        contentFit="cover"
+                        transition={150}
+                    />
+                ) : null}
+
                 <View className="flex-1 mr-4">
                     <Text className="text-base font-semibold text-gray-900 dark:text-white mb-1" numberOfLines={1}>
                         {item.Name}

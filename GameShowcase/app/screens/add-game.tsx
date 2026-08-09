@@ -4,12 +4,13 @@ import PlatformPicker from "@/components/platform-picker";
 import RatingPicker from "@/components/rating-picker";
 import StatusPicker from "@/components/status-picker";
 import GlassButton from "@/components/ui/GlassButton";
-import { router } from "expo-router";
+import { useGames } from "@/hooks/useGames";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { supabase } from "../lib/supabase";
 import type { Database } from "../types/database";
 import { GamePlatform, GameStatus } from "../types/supabase";
 
@@ -65,12 +66,44 @@ function InputField({
   );
 }
 
+/**
+ * Router params are always strings. The search screen passes the mapped
+ * platforms as a JSON array; fall back to "PC" when absent or malformed.
+ */
+function parseSeededPlatform(raw: string | undefined): GamePlatform {
+  if (!raw) {
+    return "PC";
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? (parsed[0] as GamePlatform) : "PC";
+  } catch {
+    return "PC";
+  }
+}
+
 export default function AddGameScreen() {
   const insets = useSafeAreaInsets();
+  const { addGame } = useGames();
+
+  // Seeded by screens/search-game when a game is picked from IGDB. Absent when
+  // the user chose to enter a game manually, which leaves every field blank.
+  const params = useLocalSearchParams<{
+    igdbId?: string;
+    name?: string;
+    developer?: string;
+    coverUrl?: string;
+    platforms?: string;
+  }>();
+
+  const [igdbId] = useState<string | undefined>(params.igdbId || undefined);
+  const [coverUrl] = useState<string | undefined>(params.coverUrl || undefined);
+
   const [saving, setSaving] = useState(false);
-  const [selectedName, setSelectedName] = useState("");
-  const [selectedDeveloper, setSelectedDeveloper] = useState<string | undefined>(undefined);
-  const [selectedPlatform, setSelectedPlatform] = useState<GamePlatform>("PC");
+  const [selectedName, setSelectedName] = useState(params.name ?? "");
+  const [selectedDeveloper, setSelectedDeveloper] = useState<string | undefined>(params.developer || undefined);
+  const [selectedPlatform, setSelectedPlatform] = useState<GamePlatform>(() => parseSeededPlatform(params.platforms));
   const [selectedStartDate, setSelectedStartDate] = useState<string | undefined>(undefined);
   const [selectedFinishDate, setSelectedFinishDate] = useState<string | undefined>(undefined);
   const [selectedPlaytime, setSelectedPlaytime] = useState<string | undefined>(undefined);
@@ -80,7 +113,7 @@ export default function AddGameScreen() {
   const [selectedCost, setSelectedCost] = useState<string | undefined>(undefined);
   const [selectedComments, setSelectedComments] = useState<string | undefined>(undefined);
 
-  async function addGame() {
+  async function saveGame() {
     try {
       setSaving(true);
 
@@ -100,13 +133,11 @@ export default function AddGameScreen() {
         Bought: selectedBoughtDate?.trim() || null,
         Cost: selectedCost?.trim() || null,
         Comments: selectedComments?.trim() || null,
+        IgdbId: igdbId ? Number(igdbId) : null,
+        CoverUrl: coverUrl || null,
       };
 
-      const { error } = await supabase.from("Games").insert(newGame);
-
-      if (error) {
-        throw error;
-      }
+      await addGame(newGame);
 
       Alert.alert("Success", "Game added successfully!", [{ text: "OK", onPress: () => router.back() }]);
     } catch (err: any) {
@@ -135,6 +166,23 @@ export default function AddGameScreen() {
         <View className="px-6">
           <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
             <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Basic Information</Text>
+
+            {coverUrl ? (
+              <View className="flex-row items-center mb-4">
+                <Image
+                  source={{ uri: coverUrl }}
+                  style={{ width: 60, height: 80, borderRadius: 8 }}
+                  contentFit="cover"
+                  transition={150}
+                />
+                <View className="ml-3 flex-1">
+                  <Text className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Matched on IGDB</Text>
+                  <Pressable onPress={() => router.replace("/screens/search-game")}>
+                    <Text className="text-indigo-600 dark:text-indigo-400 font-semibold">Change game</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
 
             <InputField label="Game Name" value={selectedName} onChangeText={setSelectedName} placeholder="Enter game name" />
 
@@ -211,7 +259,7 @@ export default function AddGameScreen() {
             className={`py-4 rounded-lg items-center ${
               saving ? "bg-gray-400 dark:bg-gray-600" : "bg-indigo-600 dark:bg-indigo-500"
             }`}
-            onPress={addGame}
+            onPress={saveGame}
             disabled={saving}
           >
             {saving ? (

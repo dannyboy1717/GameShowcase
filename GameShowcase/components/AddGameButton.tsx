@@ -16,7 +16,7 @@ export default function AddGameButton() {
                 zIndex: 20,
             }}
         >
-            <Button variant="glassProminent" systemImage="plus" controlSize="large" color="#6366f1" onPress={() => router.push("/screens/add-game")} />
+            <Button variant="glassProminent" systemImage="plus" controlSize="large" color="#6366f1" onPress={() => router.push("/screens/search-game")} />
         </Host>
     );
 }

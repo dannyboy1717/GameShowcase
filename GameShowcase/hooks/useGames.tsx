@@ -14,7 +14,9 @@ type GamesContextType = {
     error?: string;
     fetchGames: () => Promise<void>;
     getGameById: (id: number) => Game | undefined;
+    addGame: (newGame: Database["public"]["Tables"]["Games"]["Insert"]) => Promise<Game>;
     updateGame: (id: number, updatedGame: Database["public"]["Tables"]["Games"]["Update"]) => Promise<void>;
+    deleteGame: (id: number) => Promise<void>;
     setGames: React.Dispatch<React.SetStateAction<Game[]>>;
 };
 
@@ -53,9 +55,28 @@ export function GamesProvider({ children }: GamesProviderProps) {
         setError(error?.message || "Failed to load games.");
     }, [user]);
 
-    function getGameById(id: number): Game | undefined {
-        return games.find((game) => game.id === id);
-    }
+    const getGameById = useCallback(
+        (id: number): Game | undefined => {
+            return games.find((game) => game.id === id);
+        },
+        [games]
+    );
+
+    const addGame = useCallback(async (newGame: Database["public"]["Tables"]["Games"]["Insert"]): Promise<Game> => {
+        // .select().single() returns the persisted row, so we pick up the
+        // database-generated id and the server-defaulted user_id.
+        const { data, error } = await supabase.from("Games").insert(newGame).select().single();
+
+        if (error) {
+            throw error;
+        }
+
+        const insertedGame = data as Game;
+
+        setGames((currentGames) => [...currentGames, insertedGame]);
+
+        return insertedGame;
+    }, []);
 
     const updateGame = useCallback(async (id: number, updatedGame: Database["public"]["Tables"]["Games"]["Update"]): Promise<void> => {
         const { data, error } = await supabase.from("Games").update(updatedGame).eq("id", id).select().single();
@@ -65,6 +86,16 @@ export function GamesProvider({ children }: GamesProviderProps) {
         }
 
         setGames((currentGames) => currentGames.map((game) => (game.id === id ? (data as Game) : game)));
+    }, []);
+
+    const deleteGame = useCallback(async (id: number): Promise<void> => {
+        const { error } = await supabase.from("Games").delete().eq("id", id);
+
+        if (error) {
+            throw error;
+        }
+
+        setGames((currentGames) => currentGames.filter((game) => game.id !== id));
     }, []);
 
     useEffect(() => {
@@ -89,9 +120,11 @@ export function GamesProvider({ children }: GamesProviderProps) {
             fetchGames,
             setGames,
             getGameById,
+            addGame,
             updateGame,
+            deleteGame,
         }),
-        [games, loadingGames, error, fetchGames]
+        [games, loadingGames, error, fetchGames, getGameById, addGame, updateGame, deleteGame]
     );
 
     return <GamesContext.Provider value={value}>{children}</GamesContext.Provider>;
