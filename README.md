@@ -1,4 +1,4 @@
-# RateBit
+# r8bit
 
 A cross-platform mobile app for tracking and showcasing your video game library. Catalog the games you own, rate them, track your play status across platforms, and keep notes — all backed by your own account in the cloud.
 

@@ -1,17 +1,20 @@
 {
   "expo": {
-    "name": "RateBit",
-    "slug": "ratebit",
+    "name": "r8bit",
+    "slug": "r8bit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ratebit",
+    "scheme": "r8bit",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.danhug.RateBit",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.danhug.r8bit",
       "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "privacyManifests": {
         "NSPrivacyTracking": true,
         "NSPrivacyAccessedAPITypes": [
