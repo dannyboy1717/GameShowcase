@@ -21,8 +21,32 @@ const IGDB_GAMES_URL = "https://api.igdb.com/v4/games";
 const IGDB_IMAGE_BASE = "https://images.igdb.com/igdb/image/upload";
 
 const RESULT_LIMIT = 15;
+/**
+ * Over-fetch so there is something to re-rank. IGDB's relevance order buries
+ * popular titles — a search for "zelda" returns neither Breath of the Wild nor
+ * Tears of the Kingdom in the first 15, while ranking a bootleg 6th.
+ */
+const CANDIDATE_LIMIT = 100;
 /** Re-mint slightly early so a token can't expire mid-flight. */
 const TOKEN_EXPIRY_MARGIN_MS = 60_000;
+
+/**
+ * How much weight popularity carries against IGDB's own relevance order.
+ * Popularity-dominant, because within an already-relevant result set the
+ * well-known entry is almost always the one being looked for. IGDB's relevance
+ * is kept only as a light corrective, since it ranks a 1986 original and a
+ * Game & Watch spin-off above Breath of the Wild.
+ */
+const POPULARITY_WEIGHT = 0.8;
+const RELEVANCE_WEIGHT = 1 - POPULARITY_WEIGHT;
+/**
+ * Enough to pull an exact title match above a more popular sibling — "Yakuza 4"
+ * should beat Yakuza 0 — but deliberately not enough to float an obscure exact
+ * match over a household name, which is why it is a nudge rather than an
+ * override. A short query like "zelda" exactly matches a 1989 Game & Watch
+ * title that nobody is searching for.
+ */
+const EXACT_MATCH_BONUS = 0.5;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,6 +76,9 @@ type IgdbRawGame = {
     publisher?: boolean;
     company?: { name?: string };
   }[];
+  /** Popularity signals. Absent when the fallback query is used. */
+  follows?: number;
+  total_rating_count?: number;
 };
 
 /**
@@ -126,6 +153,53 @@ function normalize(game: IgdbRawGame): IgdbGame {
   };
 }
 
+/** Strip punctuation and case so "Persona 5" matches "persona 5". */
+function normalizeName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Re-orders IGDB's relevance list to favour titles people have actually heard
+ * of, without discarding relevance entirely.
+ *
+ * IGDB ranks "zelda" by textual relevance alone, which puts a 1986 original and
+ * a Shenzhen bootleg above Breath of the Wild. Sorting purely by popularity
+ * over-corrects the other way — searching "Yakuza 4" would surface the more
+ * popular Yakuza 0 first — so an exact title match outranks both signals.
+ *
+ * Returns a new array; the input is not mutated.
+ */
+function rankResults(games: IgdbRawGame[], searchTerm: string): IgdbRawGame[] {
+  if (games.length === 0) {
+    return games;
+  }
+
+  const target = normalizeName(searchTerm);
+  const popularityOf = (game: IgdbRawGame) => (game.follows ?? 0) + (game.total_rating_count ?? 0);
+  const maxPopularity = Math.max(...games.map(popularityOf), 0);
+
+  // Log-scaled: the gap between 0 and 500 followers matters far more than the
+  // gap between 50,000 and 50,500, and raw counts are heavily long-tailed.
+  const popularityScore = (game: IgdbRawGame) =>
+    maxPopularity > 0 ? Math.log1p(popularityOf(game)) / Math.log1p(maxPopularity) : 0;
+
+  return games
+    .map((game, index) => {
+      // 1.0 for IGDB's top hit, decaying to ~0 for the last candidate.
+      const relevance = 1 - index / games.length;
+      const exact = game.name && normalizeName(game.name) === target ? EXACT_MATCH_BONUS : 0;
+
+      return {
+        game,
+        index,
+        score: exact + RELEVANCE_WEIGHT * relevance + POPULARITY_WEIGHT * popularityScore(game),
+      };
+    })
+    // Ties fall back to IGDB's ordering rather than an arbitrary sort.
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((entry) => entry.game);
+}
+
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -169,24 +243,39 @@ Deno.serve(async (request) => {
     //                          (10), while dropping DLC, mods, packs and
     //                          updates. Remakes are kept deliberately: people
     //                          track e.g. RE4 (2005) and RE4 (2023) separately.
-    const body = [
-      `search "${searchTerm}";`,
-      "fields name, cover.image_id, first_release_date, platforms.name,",
-      "       involved_companies.company.name,",
-      "       involved_companies.developer, involved_companies.publisher;",
-      "where version_parent = null & game_type = (0,4,8,9,10);",
-      `limit ${RESULT_LIMIT};`,
-    ].join("\n");
+    const buildQuery = (withPopularity: boolean) =>
+      [
+        `search "${searchTerm}";`,
+        "fields name, cover.image_id, first_release_date, platforms.name,",
+        "       involved_companies.company.name,",
+        "       involved_companies.developer, involved_companies.publisher",
+        withPopularity ? "       , follows, total_rating_count;" : ";",
+        "where version_parent = null & game_type = (0,4,8,9,10);",
+        `limit ${withPopularity ? CANDIDATE_LIMIT : RESULT_LIMIT};`,
+      ].join("\n");
 
-    const response = await fetch(IGDB_GAMES_URL, {
-      method: "POST",
-      headers: {
-        "Client-ID": IGDB_CLIENT_ID,
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "text/plain",
-      },
-      body,
-    });
+    const runSearch = (withPopularity: boolean) =>
+      fetch(IGDB_GAMES_URL, {
+        method: "POST",
+        headers: {
+          "Client-ID": IGDB_CLIENT_ID,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "text/plain",
+        },
+        body: buildQuery(withPopularity),
+      });
+
+    let ranked = true;
+    let response = await runSearch(true);
+
+    // A 400 means IGDB rejected the request body — most likely one of the
+    // popularity fields. Degrade to the plain query so search keeps working
+    // rather than failing outright, and make the reason visible in the logs.
+    if (response.status === 400) {
+      console.error("IGDB rejected the ranked query; falling back to unranked search.");
+      ranked = false;
+      response = await runSearch(false);
+    }
 
     if (!response.ok) {
       // A 401 usually means the cached token was revoked server-side; drop it
@@ -200,8 +289,9 @@ Deno.serve(async (request) => {
     }
 
     const games: IgdbRawGame[] = await response.json();
+    const ordered = ranked ? rankResults(games, searchTerm) : games;
 
-    return jsonResponse({ results: games.map(normalize) }, 200);
+    return jsonResponse({ results: ordered.slice(0, RESULT_LIMIT).map(normalize) }, 200);
   } catch (err) {
     console.error("igdb-search error:", err instanceof Error ? err.message : err);
     return jsonResponse({ results: [], error: "IGDB search failed." }, 500);

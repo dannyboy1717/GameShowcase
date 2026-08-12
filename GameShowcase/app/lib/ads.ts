@@ -7,14 +7,25 @@ import { PERMISSIONS, RESULTS, check, request } from "react-native-permissions";
  * Test IDs in development so we never serve — or click — a live ad against our
  * own account, which is what gets AdMob accounts suspended.
  *
- * TODO: replace the placeholders with real unit IDs from the AdMob console.
- * They're deliberately obvious so a production build fails loudly rather than
- * silently serving nothing.
+ * This means live ads are only ever visible in a release build. Seeing test
+ * ads (or none) while developing is expected, not a fault.
  */
 export const AD_UNITS = {
     banner: __DEV__ ? TestIds.BANNER : "ca-app-pub-9221208917509978/8520671154",
     interstitial: __DEV__ ? TestIds.INTERSTITIAL : "ca-app-pub-9221208917509978/4521716399",
 };
+
+/**
+ * Suppresses every ad surface when set. Intended for capturing App Store
+ * screenshots: a Google "Test Ad" placeholder reads as an unfinished build, and
+ * Apple rejects marketing images that feature advertising.
+ *
+ *     EXPO_PUBLIC_HIDE_ADS=1 npx expo start
+ *
+ * Ads show unless this is explicitly "1", so an unset variable can never
+ * silently ship a build that earns nothing.
+ */
+export const ADS_HIDDEN = process.env.EXPO_PUBLIC_HIDE_ADS === "1";
 
 const COMPLETED_ADDS_KEY = "ads:completedAdds";
 const LAST_INTERSTITIAL_KEY = "ads:lastInterstitialAt";
@@ -72,6 +83,13 @@ function waitForActive(): Promise<boolean> {
 export async function bootstrapAds(): Promise<boolean> {
     if (adsInitialized) {
         return true;
+    }
+
+    // Screenshot capture. Leaving adsInitialized false suppresses the banner
+    // (via adsReady) and interstitials (which bail on the same flag), so one
+    // early return covers every ad surface.
+    if (ADS_HIDDEN) {
+        return false;
     }
 
     try {
