@@ -24,7 +24,8 @@
   "submit": {
     "production": {
       "ios": {
-        "bundleIdentifier": "com.danhug.r8bit"
+        "bundleIdentifier": "com.danhug.r8bit",
+        "ascAppId": "6800881177"
       }
     }
   }
